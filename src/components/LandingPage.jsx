@@ -174,6 +174,10 @@ export default function LandingPage() {
           </div>
         </div>
       </main>
+      <footer className={styles.footer}>
+        <span>©AkountSmart. 2026.</span>
+        <span>All Rights Reserved</span>
+      </footer>
     </div>
   )
 }

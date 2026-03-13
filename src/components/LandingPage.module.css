@@ -2,13 +2,27 @@
    KEYFRAMES (must live here for CSS Modules)
    ===================== */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(24px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.94) translateY(20px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 /* =====================
@@ -20,31 +34,27 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  padding-bottom: 80px;
+  padding-bottom: 0;
 }
 
 .gradientBg {
   position: fixed;
   inset: 0;
-  background: linear-gradient(
-    160deg,
-    #1a52e0 0%,
-    #2563eb 25%,
-    #3b82f6 55%,
-    #60a5fa 80%,
-    #93c5fd 100%
-  );
+  background: linear-gradient(160deg,
+      #1a52e0 0%,
+      #2563eb 25%,
+      #3b82f6 55%,
+      #60a5fa 80%,
+      #93c5fd 100%);
   z-index: 0;
 }
 
 .gradientOverlay {
   position: fixed;
   inset: 0;
-  background: radial-gradient(
-    ellipse 80% 60% at 50% 0%,
-    rgba(255,255,255,0.08) 0%,
-    transparent 70%
-  );
+  background: radial-gradient(ellipse 80% 60% at 50% 0%,
+      rgba(255, 255, 255, 0.08) 0%,
+      transparent 70%);
   z-index: 1;
 }
 
@@ -131,7 +141,7 @@
   gap: 8px;
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,0.25);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   color: #ffffff;
   font-family: 'DM Sans', sans-serif;
   font-size: 13px;
@@ -193,10 +203,10 @@
 .inputWrap {
   display: flex;
   align-items: center;
-  background: rgba(255,255,255,0.95);
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 100px;
   padding: 5px 5px 5px 22px;
-  box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.18);
   width: 440px;
   max-width: 90vw;
 }
@@ -255,8 +265,13 @@
   font-weight: 400;
 }
 
-.successMsg { color: #bbf7d0; }
-.errorMsg   { color: #fecaca; }
+.successMsg {
+  color: #bbf7d0;
+}
+
+.errorMsg {
+  color: #fecaca;
+}
 
 /* =====================
    DASHBOARD PREVIEW
@@ -274,8 +289,8 @@
   border-radius: 16px 16px 0 0;
   overflow: hidden;
   box-shadow:
-    0 -4px 40px rgba(0,0,0,0.15),
-    0 0 0 1px rgba(255,255,255,0.2);
+    0 -4px 40px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.2);
 }
 
 .previewImg {
@@ -297,7 +312,9 @@
   font-family: 'DM Sans', sans-serif;
 }
 
-.previewPlaceholderInner { width: 100%; }
+.previewPlaceholderInner {
+  width: 100%;
+}
 
 .placeholderNav {
   background: #ffffff;
@@ -364,7 +381,9 @@
   cursor: pointer;
 }
 
-.sidebarItem:hover { background: #f1f5f9; }
+.sidebarItem:hover {
+  background: #f1f5f9;
+}
 
 .placeholderContent {
   flex: 1;
@@ -459,10 +478,22 @@
    RESPONSIVE
    ================== */
 @media (max-width: 768px) {
-  .nav { padding: 16px 20px; }
-  .hero { padding: 36px 16px 0; }
-  .heading { font-size: 32px; letter-spacing: -1px; }
-  .subheading { font-size: 14px; }
+  .nav {
+    padding: 16px 20px;
+  }
+
+  .hero {
+    padding: 36px 16px 0;
+  }
+
+  .heading {
+    font-size: 32px;
+    letter-spacing: -1px;
+  }
+
+  .subheading {
+    font-size: 14px;
+  }
 
   .inputWrap {
     width: 100%;
@@ -478,7 +509,31 @@
     text-align: center;
   }
 
-  .submitBtn { width: 100%; text-align: center; }
-  .statsRow { grid-template-columns: repeat(2, 1fr); }
-  .placeholderSidebar { display: none; }
+  .submitBtn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .statsRow {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .placeholderSidebar {
+    display: none;
+  }
+}
+
+.footer {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  padding: 20px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  font-family: 'DM Sans', sans-serif;
+  color: rgba(255, 255, 255, 0.75);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  margin-top: auto;
 }

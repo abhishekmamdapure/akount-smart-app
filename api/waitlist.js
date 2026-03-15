@@ -35,10 +35,45 @@ const WaitlistSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  emailSent: {
+    type: String,
+    enum: ['true', 'false'],
+    default: 'false',
+  },
 })
 
 // Avoid model re-compilation in serverless warm starts
 const Waitlist = mongoose.models.Waitlist || mongoose.model('Waitlist', WaitlistSchema)
+
+async function sendWaitlistEmail(email) {
+  const baseUrl = process.env.WAITLIST_EMAIL_API_BASE_URL
+  if (!baseUrl) {
+    console.warn('WAITLIST_EMAIL_API_BASE_URL is not set; skipping waitlist email sending.')
+    return false
+  }
+
+  try {
+    const response = await fetch(`${baseUrl}/api/misc/send-waitlist-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        accept: 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    })
+
+    if (!response.ok) {
+      console.error(`Waitlist email API failed with status ${response.status}`)
+      return false
+    }
+
+    const emailResult = await response.json()
+    return emailResult?.status === 'sent'
+  } catch (error) {
+    console.error('Failed to call waitlist email API:', error)
+    return false
+  }
+}
 
 // ---- Handler ----
 export default async function handler(req, res) {
@@ -72,9 +107,16 @@ export default async function handler(req, res) {
     const entry = new Waitlist({ email: email.trim().toLowerCase() })
     await entry.save()
 
+    const isEmailSent = await sendWaitlistEmail(entry.email)
+    if (isEmailSent) {
+      entry.emailSent = 'true'
+      await entry.save()
+    }
+
     return res.status(201).json({
       success: true,
       message: "You're on the waitlist! We'll notify you when we launch.",
+      emailSent: entry.emailSent,
     })
   } catch (err) {
     // Duplicate email (MongoDB unique index error)

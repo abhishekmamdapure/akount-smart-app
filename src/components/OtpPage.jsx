@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '../supabase'
 import shared from './auth.module.css'
 import s from './OtpPage.module.css'
 

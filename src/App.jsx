@@ -1,10 +1,10 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import LandingPage from './components/LandingPage'
-import LoginPage from './components/auth/LoginPage'
-import SignupPage from './components/auth/SignupPage'
-import OtpPage from './components/auth/OtpPage'
-import ForgotPasswordPage from './components/auth/ForgotPasswordPage'
-import CreatePasswordPage from './components/auth/CreatePasswordPage'
+import LoginPage from './components/LoginPage'
+import SignupPage from './components/SignupPage'
+import OtpPage from './components/OtpPage'
+import ForgotPasswordPage from './components/ForgotPasswordPage'
+import CreatePasswordPage from './components/CreatePasswordPage'
 
 export default function App() {
   return (

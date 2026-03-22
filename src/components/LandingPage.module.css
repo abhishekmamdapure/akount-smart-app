@@ -122,6 +122,40 @@
   background: #1e293b;
 }
 
+.navRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.loginBtn {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  border-radius: 100px;
+  padding: 10px 22px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  letter-spacing: -0.1px;
+  transition: background 0.2s;
+}
+
+.loginBtn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.sidebarItemActive {
+  background: #eff6ff;
+  color: #2563eb;
+  font-weight: 500;
+}
+
 /* =========
    HERO
    ========= */
@@ -414,8 +448,8 @@
 }
 
 .statBlue {
-  background: #3b82f6;
-  border-color: #3b82f6;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  border-color: #4f46e5;
 }
 
 .statBlue .statLabel,

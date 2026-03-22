@@ -58,13 +58,16 @@ export default function LandingPage() {
           {/* <LogoIcon /> */}
           <span className={styles.logoText}>AkountSmart</span>
         </div>
-        <button className={styles.launchBadge}>
-          Launching in May
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="7" y1="17" x2="17" y2="7" />
-            <polyline points="7 7 17 7 17 17" />
-          </svg>
-        </button>
+        <div className={styles.navRight}>
+          <a href="/login" className={styles.loginBtn}>Login</a>
+          <button className={styles.launchBadge}>
+            Launching in May
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="7" y1="17" x2="17" y2="7" />
+              <polyline points="7 7 17 7 17 17" />
+            </svg>
+          </button>
+        </div>
       </nav>
 
       {/* Hero */}
@@ -126,11 +129,12 @@ export default function LandingPage() {
               <div className={styles.previewPlaceholderInner}>
                 <div className={styles.placeholderNav}>
                   <div className={styles.placeholderLogo}>AkountSmart</div>
-                  <div className={styles.placeholderNavItems}><span>Home</span></div>
+                  <div className={styles.placeholderNavItems}><span className={styles.navItemActive}>Home</span></div>
                 </div>
                 <div className={styles.placeholderBody}>
                   <div className={styles.placeholderSidebar}>
                     <div className={styles.sidebarGroup}>
+                      <div className={`${styles.sidebarItem} ${styles.sidebarItemActive}`}>Home</div>
                       <div className={styles.sidebarLabel}>Accounting</div>
                       <div className={styles.sidebarItem}>Invoice Processing</div>
                       <div className={styles.sidebarItem}>Tally XML Converter</div>

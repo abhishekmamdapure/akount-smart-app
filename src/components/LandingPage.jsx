@@ -1,17 +1,6 @@
 import { useState } from 'react'
 import styles from './LandingPage.module.css'
 
-// Inline SVG logo icon — matches the reference design
-// function LogoIcon() {
-//   return (
-//     <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-//       <rect width="28" height="28" rx="7" fill="rgba(255,255,255,0.2)" />
-//       <path d="M9 19L13 9L17 15L19.5 11L22 19" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-//       <circle cx="9" cy="19" r="1.5" fill="white" />
-//     </svg>
-//   )
-// }
-
 export default function LandingPage() {
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState('idle')
@@ -55,7 +44,6 @@ export default function LandingPage() {
       {/* Navbar */}
       <nav className={styles.nav}>
         <div className={styles.logo}>
-          {/* <LogoIcon /> */}
           <span className={styles.logoText}>AkountSmart</span>
         </div>
         <button className={styles.launchBadge}>
@@ -109,71 +97,104 @@ export default function LandingPage() {
             </p>
           )}
         </form>
+      </main>
 
-        {/* Dashboard Preview */}
-        <div className={styles.previewWrap}>
-          <div className={styles.previewCard}>
-            <img
-              src="/images/dashboard-preview.png"
-              alt="AkountSmart Dashboard Preview"
-              className={styles.previewImg}
-              onError={(e) => {
-                e.target.style.display = 'none'
-                e.target.nextSibling.style.display = 'flex'
-              }}
-            />
-            <div className={styles.previewPlaceholder}>
-              <div className={styles.previewPlaceholderInner}>
-                <div className={styles.placeholderNav}>
-                  <div className={styles.placeholderLogo}>AkountSmart</div>
-                  <div className={styles.placeholderNavItems}><span>Home</span></div>
-                </div>
-                <div className={styles.placeholderBody}>
-                  <div className={styles.placeholderSidebar}>
-                    <div className={styles.sidebarGroup}>
-                      <div className={styles.sidebarLabel}>Accounting</div>
-                      <div className={styles.sidebarItem}>Invoice Processing</div>
-                      <div className={styles.sidebarItem}>Tally XML Converter</div>
-                    </div>
-                    <div className={styles.sidebarGroup}>
-                      <div className={styles.sidebarLabel}>GST Reconciliation</div>
-                      <div className={styles.sidebarItem}>2B Matching</div>
-                      <div className={styles.sidebarItem}>4A Reconciliation</div>
-                    </div>
-                  </div>
-                  <div className={styles.placeholderContent}>
-                    <h3>Welcome back, Priyanka 👋</h3>
-                    <div className={styles.statsRow}>
-                      <div className={`${styles.statCard} ${styles.statBlue}`}>
-                        <div className={styles.statLabel}>Clients Managed</div>
-                        <div className={styles.statValue}>142</div>
-                        <div className={styles.statSub}>+5 this week</div>
-                      </div>
-                      <div className={styles.statCard}>
-                        <div className={styles.statLabel}>Returns Pending</div>
-                        <div className={styles.statValue}>34</div>
-                      </div>
-                      <div className={styles.statCard}>
-                        <div className={styles.statLabel}>GST Mismatches</div>
-                        <div className={styles.statValue}>6</div>
-                      </div>
-                      <div className={styles.statCard}>
-                        <div className={styles.statLabel}>Notices Received</div>
-                        <div className={styles.statValue}>2</div>
-                      </div>
-                    </div>
-                    <div className={styles.aiAssistant}>
-                      <div className={styles.aiTitle}>🤖 AI Tax Assistant</div>
-                      <div className={styles.aiSubtitle}>Ask anything about GST, notices, reconciliation, or filings.</div>
-                      <div className={styles.aiInput}>Ask something like: Why is GSTR-2B mismatch happening?</div>
-                    </div>
-                  </div>
-                </div>
+      {/* Features Grid */}
+      <section className={styles.featuresSection}>
+        <div className={styles.featuresGrid}>
+
+          {/* Password Management */}
+          <div className={styles.featureCard}>
+            <div className={styles.featureIcon}>
+              <svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <ellipse cx="19" cy="16" rx="7" ry="9" stroke="#4F6EF7" strokeWidth="2" fill="none" />
+                <path d="M14 16c0-2.761 2.239-5 5-5" stroke="#4F6EF7" strokeWidth="1.8" strokeLinecap="round" />
+                <circle cx="19" cy="16" r="2" fill="#4F6EF7" />
+                <path d="M10 26.5c0-1.5.8-2.8 2-3.6M28 26.5c0-1.5-.8-2.8-2-3.6" stroke="#4F6EF7" strokeWidth="1.8" strokeLinecap="round" opacity="0.45" />
+                <path d="M13 30c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="#4F6EF7" strokeWidth="2" strokeLinecap="round" />
+                <circle cx="19" cy="7" r="1.2" fill="#4F6EF7" opacity="0.5" />
+                <circle cx="12.5" cy="10" r="1.2" fill="#4F6EF7" opacity="0.4" />
+                <circle cx="25.5" cy="10" r="1.2" fill="#4F6EF7" opacity="0.4" />
+              </svg>
+            </div>
+            <h3 className={styles.featureTitle}>Password Management</h3>
+            <p className={styles.featureDesc}>Store and access sensitive credentials securely.</p>
+          </div>
+
+          {/* Clients Management */}
+          <div className={styles.featureCard}>
+            <div className={styles.featureIcon}>
+              <svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="19" cy="12" r="4.5" fill="#4F6EF7" opacity="0.9" />
+                <circle cx="10" cy="14" r="3.2" fill="#4F6EF7" opacity="0.5" />
+                <circle cx="28" cy="14" r="3.2" fill="#4F6EF7" opacity="0.5" />
+                <path d="M9 29c0-3.866 4.477-7 10-7s10 3.134 10 7" stroke="#4F6EF7" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+                <path d="M4.5 29c0-2.761 2.462-5 5.5-5" stroke="#4F6EF7" strokeWidth="1.8" strokeLinecap="round" opacity="0.45" />
+                <path d="M33.5 29c0-2.761-2.462-5-5.5-5" stroke="#4F6EF7" strokeWidth="1.8" strokeLinecap="round" opacity="0.45" />
+              </svg>
+            </div>
+            <h3 className={styles.featureTitle}>Clients Management</h3>
+            <p className={styles.featureDesc}>Manage client data, documents, and workflows in one place.</p>
+          </div>
+
+          {/* Invoice Processing */}
+          <div className={styles.featureCard}>
+            <div className={styles.featureIcon}>
+              <svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="7" y="4" width="20" height="26" rx="3" stroke="#4F6EF7" strokeWidth="2" fill="none" />
+                <path d="M13 13H25" stroke="#4F6EF7" strokeWidth="1.8" strokeLinecap="round" />
+                <path d="M13 18H25" stroke="#4F6EF7" strokeWidth="1.8" strokeLinecap="round" />
+                <path d="M13 23H19" stroke="#4F6EF7" strokeWidth="1.8" strokeLinecap="round" />
+                <circle cx="25" cy="28" r="5" fill="#4F6EF7" opacity="0.12" stroke="#4F6EF7" strokeWidth="1.8" />
+                <path d="M23 28l1.5 1.5 2.5-3" stroke="#4F6EF7" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <h3 className={styles.featureTitle}>Invoice Processing</h3>
+            <p className={styles.featureDesc}>Automate invoice capture, validation, and data extraction in seconds.</p>
+          </div>
+
+          {/* Tally XML Converter */}
+          <div className={styles.featureCard}>
+            <div className={styles.featureIcon}>
+              <svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 5h14l9 9v19a2 2 0 01-2 2H8a2 2 0 01-2-2V7a2 2 0 012-2z" stroke="#4F6EF7" strokeWidth="2" fill="none" />
+                <path d="M22 5v9h9" stroke="#4F6EF7" strokeWidth="1.8" strokeLinejoin="round" fill="none" />
+                <rect x="9" y="22" width="20" height="10" rx="2" fill="#4F6EF7" />
+                <text x="19" y="30" textAnchor="middle" fill="white" fontSize="6.5" fontWeight="700" fontFamily="monospace">XML</text>
+              </svg>
+            </div>
+            <h3 className={styles.featureTitle}>Tally XML Converter</h3>
+            <p className={styles.featureDesc}>Seamlessly convert and integrate data with Tally-compatible formats.</p>
+          </div>
+
+          {/* GST Reconciliation */}
+          <div className={styles.featureCard}>
+            <div className={styles.featureIcon}>
+              <div className={styles.gstBadge}>
+                <span className={styles.gstLabel}>GST</span>
               </div>
             </div>
+            <h3 className={styles.featureTitle}>GST Reconciliation</h3>
+            <p className={styles.featureDesc}>Match purchase data with GSTR-2B to identify mismatches instantly.</p>
           </div>
+
+          {/* PDF Tools */}
+          <div className={styles.featureCard}>
+            <div className={styles.featureIcon}>
+              <svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 5h14l9 9v19a2 2 0 01-2 2H8a2 2 0 01-2-2V7a2 2 0 012-2z" stroke="#4F6EF7" strokeWidth="2" fill="none" />
+                <path d="M22 5v9h9" stroke="#4F6EF7" strokeWidth="1.8" strokeLinejoin="round" fill="none" />
+                <rect x="9" y="22" width="20" height="10" rx="2" fill="#E53E3E" />
+                <text x="19" y="30" textAnchor="middle" fill="white" fontSize="6.5" fontWeight="700" fontFamily="monospace">PDF</text>
+              </svg>
+            </div>
+            <h3 className={styles.featureTitle}>PDF Tools</h3>
+            <p className={styles.featureDesc}>Extract, merge, and process PDF documents for accounting workflows.</p>
+          </div>
+
         </div>
-      </main>
+      </section>
+
       <footer className={styles.footer}>
         <span>©AkountSmart. 2026.</span>
         <span>All Rights Reserved</span>

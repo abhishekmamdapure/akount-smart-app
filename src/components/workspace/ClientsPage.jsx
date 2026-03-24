@@ -47,8 +47,8 @@ export default function ClientsPage() {
   const outletContext = useOutletContext() ?? {}
   const authReady = outletContext.authReady ?? false
   const currentUser = outletContext.currentUser ?? null
-  const openClientModal = outletContext.openClientModal ?? (() => {})
-  const openEditClientModal = outletContext.openEditClientModal ?? (() => {})
+  const openClientModal = outletContext.openClientModal ?? (() => { })
+  const openEditClientModal = outletContext.openEditClientModal ?? (() => { })
   const clientRefreshKey = outletContext.clientRefreshKey ?? 0
 
   const [clients, setClients] = useState([])
@@ -179,15 +179,12 @@ export default function ClientsPage() {
 
   const totalClientCount = clients.length
   const countMeta = query.trim()
-    ? `${filteredClients.length} matching the current filter`
-    : `${totalClientCount} client${totalClientCount === 1 ? '' : 's'} attached to this CRM workspace`
   const deleteSucceeded = deleteState === 'success'
 
   return (
     <div className={styles.page}>
       <section className={styles.pageToolbar}>
         <div className={styles.clientsCountCard}>
-          <span className={styles.clientsCountLabel}>Client Ledger</span>
           <div className={styles.clientsCountRow}>
             <h1 className={styles.clientsCountTitle}>Clients</h1>
             <span className={styles.clientsCountBadge}>{formatClientBadge(totalClientCount)}</span>

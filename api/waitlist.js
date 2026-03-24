@@ -1,83 +1,7 @@
-// api/waitlist.js
-// Vercel Serverless Function - Node.js runtime
-// Stores waitlist emails in MongoDB Atlas
+import { connectDB } from '../lib/mongodb.js'
+import { createWaitlistEntry, validateWaitlistEmail } from '../lib/services/waitlist.js'
 
-import mongoose from 'mongoose'
-
-// ---- MongoDB Connection ----
-let isConnected = false
-
-async function connectDB() {
-  if (isConnected) return
-
-  if (!process.env.MONGODB_URI) {
-    throw new Error('MONGODB_URI environment variable is not set')
-  }
-
-  await mongoose.connect(process.env.MONGODB_URI, {
-    dbName: 'akountsmart',
-  })
-
-  isConnected = true
-}
-
-// ---- Mongoose Schema ----
-const WaitlistSchema = new mongoose.Schema({
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    lowercase: true,
-    trim: true,
-    match: [/^\S+@\S+\.\S+$/, 'Invalid email format'],
-  },
-  joinedAt: {
-    type: Date,
-    default: Date.now,
-  },
-  emailSent: {
-    type: String,
-    enum: ['true', 'false'],
-    default: 'false',
-  },
-})
-
-// Avoid model re-compilation in serverless warm starts
-const Waitlist = mongoose.models.Waitlist || mongoose.model('Waitlist', WaitlistSchema)
-
-async function sendWaitlistEmail(email) {
-  const baseUrl = process.env.WAITLIST_EMAIL_API_BASE_URL
-  if (!baseUrl) {
-    console.warn('WAITLIST_EMAIL_API_BASE_URL is not set; skipping waitlist email sending.')
-    return false
-  }
-
-  try {
-    const response = await fetch(`${baseUrl}/api/misc/send-waitlist-email`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        accept: 'application/json',
-      },
-      body: JSON.stringify({ email }),
-    })
-
-    if (!response.ok) {
-      console.error(`Waitlist email API failed with status ${response.status}`)
-      return false
-    }
-
-    const emailResult = await response.json()
-    return emailResult?.status === 'sent'
-  } catch (error) {
-    console.error('Failed to call waitlist email API:', error)
-    return false
-  }
-}
-
-// ---- Handler ----
 export default async function handler(req, res) {
-  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
@@ -90,41 +14,32 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { email } = req.body
+  const { email } = req.body || {}
 
   if (!email || typeof email !== 'string') {
     return res.status(400).json({ error: 'Email is required.' })
   }
 
-  const emailRegex = /^\S+@\S+\.\S+$/
-  if (!emailRegex.test(email.trim())) {
+  if (!validateWaitlistEmail(email)) {
     return res.status(400).json({ error: 'Please enter a valid email address.' })
   }
 
   try {
     await connectDB()
 
-    const entry = new Waitlist({ email: email.trim().toLowerCase() })
-    await entry.save()
-
-    const isEmailSent = await sendWaitlistEmail(entry.email)
-    if (isEmailSent) {
-      entry.emailSent = 'true'
-      await entry.save()
-    }
+    const entry = await createWaitlistEntry(email)
 
     return res.status(201).json({
       success: true,
       message: "You're on the waitlist! We'll notify you when we launch.",
       emailSent: entry.emailSent,
     })
-  } catch (err) {
-    // Duplicate email (MongoDB unique index error)
-    if (err.code === 11000) {
-      return res.status(409).json({ error: "This email is already on the waitlist!" })
+  } catch (error) {
+    if (error?.code === 11000) {
+      return res.status(409).json({ error: 'This email is already on the waitlist!' })
     }
 
-    console.error('Waitlist error:', err)
+    console.error('Waitlist error:', error)
     return res.status(500).json({ error: 'Something went wrong. Please try again.' })
   }
 }

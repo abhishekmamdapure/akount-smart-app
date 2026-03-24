@@ -12,6 +12,8 @@ import FeaturePlaceholderPage from './components/workspace/FeaturePlaceholderPag
 import TallyXmlConverterPage from './components/workspace/TallyXmlConverterPage'
 import WorkspaceLayout from './components/workspace/WorkspaceLayout'
 import InvoiceProcessingPage from './components/workspace/tools/invoice-processing/InvoiceProcessingPage'
+import GstReconciliationPage from './components/workspace/tools/gst-reconciliation/GstReconciliationPage'
+import PdfToolsPage from './components/workspace/tools/pdf-tools/PdfToolsPage'
 
 export default function App() {
   return (
@@ -54,115 +56,14 @@ export default function App() {
           />
           <Route path="invoice-processing" element={<InvoiceProcessingPage />} />
           <Route path="tally-xml-converter" element={<TallyXmlConverterPage />} />
-          <Route
-            path="gst-reconciliation"
-            element={
-              <FeaturePlaceholderPage
-                description="This module is prepared for mismatch triage, notice response, and reconciliation workflows."
-                eyebrow="Compliance center"
-                highlights={[
-                  {
-                    icon: 'gst',
-                    title: 'Mismatch triage',
-                    copy: 'Group exceptions by severity so the team can clear high-risk filings first.',
-                  },
-                  {
-                    icon: 'spark',
-                    title: 'Notice-ready audit trails',
-                    copy: 'Keep snapshots, explanations, and evidence packs attached to every compliance cycle.',
-                  },
-                  {
-                    icon: 'clients',
-                    title: 'Client-wise follow-up',
-                    copy: 'Coordinate action owners, dates, and entity-specific blockers from one screen.',
-                  },
-                ]}
-                title="GST Reconciliation"
-              />
-            }
-          />
-          <Route
-            path="reconciliation-2b"
-            element={
-              <FeaturePlaceholderPage
-                description="Use this space for supplier matching, mismatch aging, and vendor follow-up cycles."
-                eyebrow="2B reconciliation"
-                highlights={[
-                  {
-                    icon: 'chart',
-                    title: 'Supplier match rate',
-                    copy: 'Track how much input tax credit is ready to claim and where the exposure remains.',
-                  },
-                  {
-                    icon: 'switch',
-                    title: 'Vendor escalations',
-                    copy: 'Escalate repeated mismatch vendors with shared notes and required evidence.',
-                  },
-                  {
-                    icon: 'calendar',
-                    title: 'Period control',
-                    copy: 'Lock reconciliation by month and reopen only when corrected filings come in.',
-                  },
-                ]}
-                title="2B Reconciliation"
-              />
-            }
-          />
-          <Route
-            path="reconciliation-4a"
-            element={
-              <FeaturePlaceholderPage
-                description="This section can hold claim summaries, offset validation, and filing support views."
-                eyebrow="4A reconciliation"
-                highlights={[
-                  {
-                    icon: 'gst',
-                    title: 'Credit snapshots',
-                    copy: 'Summarize eligible and blocked credits before filing windows close.',
-                  },
-                  {
-                    icon: 'dashboard',
-                    title: 'Variance tracking',
-                    copy: 'Compare current 4A positions against prior periods and resolved mismatches.',
-                  },
-                  {
-                    icon: 'check',
-                    title: 'Filing confidence',
-                    copy: 'Give reviewers a clean readiness score before sign-off.',
-                  },
-                ]}
-                title="4A Reconciliation"
-              />
-            }
-          />
+          <Route path="gst-reconciliation" element={<GstReconciliationPage />} />
+          <Route path="reconciliation-2b" element={<Navigate replace to="/dashboard/gst-reconciliation?type=2b" />} />
+          <Route path="reconciliation-4a" element={<Navigate replace to="/dashboard/gst-reconciliation?type=4a" />} />
           <Route path="clients" element={<ClientsPage />} />
           <Route path="account-settings" element={<Navigate replace to="/dashboard/settings" />} />
           <Route
             path="pdf-tools"
-            element={
-              <FeaturePlaceholderPage
-                description="Reserve this module for splitting, redaction, password removal, and document packet creation."
-                eyebrow="Document toolkit"
-                highlights={[
-                  {
-                    icon: 'pdf',
-                    title: 'Batch utilities',
-                    copy: 'Split and merge large filing packets without leaving the workspace.',
-                  },
-                  {
-                    icon: 'password',
-                    title: 'Secure handling',
-                    copy: 'Apply or remove passwords with clear audit ownership and expiry controls.',
-                  },
-                  {
-                    icon: 'download',
-                    title: 'Download packs',
-                    copy: 'Prepare final client delivery bundles with minimal manual formatting.',
-                  },
-                ]}
-                title="PDF Tools"
-              />
-            }
+            element={<PdfToolsPage />}
           />
           <Route
             path="password-manager"
@@ -196,6 +97,7 @@ export default function App() {
             path="help"
             element={
               <FeaturePlaceholderPage
+                clientContextEnabled={false}
                 description="Use this section for guided support, change logs, and embedded product education."
                 eyebrow="Support"
                 highlights={[
@@ -225,3 +127,5 @@ export default function App() {
     </BrowserRouter>
   )
 }
+
+

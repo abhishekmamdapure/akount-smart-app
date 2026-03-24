@@ -1,27 +1,29 @@
 .body {
   flex: 1;
-  padding: 32px;
+  min-height: 0;
+  padding: 24px;
   display: flex;
   align-items: stretch;
+  justify-content: center;
 }
 
 .card {
   width: 100%;
-  max-width: 1080px;
-  margin: 0 auto;
+  max-width: 1220px;
+  flex: 1 1 auto;
+  margin: 0;
   background: #ffffff;
-  border-radius: 20px;
+  border-radius: 24px;
   overflow: hidden;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1.1fr) minmax(420px, 0.9fr);
   box-shadow: 0 4px 32px rgba(0, 0, 0, 0.08);
-  min-height: 560px;
+  min-height: 0;
 }
 
-/* ---- LEFT PANEL ---- */
 .leftPanel {
   background: #dbeafe;
-  padding: 48px 40px;
+  padding: 56px 48px;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -31,15 +33,20 @@
 
 .blob {
   position: absolute;
-  inset: -20px;
-  background: #bfdbfe;
-  border-radius: 50% 60% 70% 40% / 50% 40% 60% 50%;
+  inset: -30px -40px;
   z-index: 0;
+  pointer-events: none;
+}
+
+.blobSvg {
+  width: 100%;
+  height: 100%;
 }
 
 .leftContent {
   position: relative;
   z-index: 1;
+  max-width: 520px;
 }
 
 .securityTag {
@@ -57,11 +64,11 @@
 
 .leftHeading {
   font-family: 'Bricolage Grotesque', sans-serif;
-  font-size: clamp(28px, 3vw, 40px);
+  font-size: clamp(34px, 4vw, 56px);
   font-weight: 800;
   color: #0f172a;
-  line-height: 1.15;
-  margin-bottom: 20px;
+  line-height: 1.05;
+  margin-bottom: 22px;
 }
 
 .leftHeadingAccent {
@@ -69,22 +76,29 @@
 }
 
 .leftDesc {
-  font-size: 15px;
-  color: #475569;
-  line-height: 1.65;
-  max-width: 340px;
+  font-size: 16px;
+  color: #334155;
+  line-height: 1.75;
+  max-width: 480px;
+}
+
+.securityBadgeWrap {
+  position: relative;
+  z-index: 1;
+  max-width: 360px;
 }
 
 .securityBadge {
-  position: relative;
-  z-index: 1;
+  width: 100%;
+  border: none;
   background: #ffffff;
   border-radius: 14px;
   padding: 16px 20px;
   display: flex;
   align-items: center;
   gap: 16px;
-  max-width: 320px;
+  cursor: pointer;
+  text-align: left;
 }
 
 .badgeIcon {
@@ -107,12 +121,33 @@
 
 .badgeSubtitle {
   font-size: 12px;
-  color: #64748b;
+  color: #475569;
 }
 
-/* ---- RIGHT PANEL ---- */
+.securityTooltip {
+  margin: 0;
+  font-size: 12px;
+  color: #0f172a;
+  line-height: 1.45;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 0 12px;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.2s ease, opacity 0.2s ease, padding 0.2s ease, margin-top 0.2s ease;
+}
+
+.securityTooltipOpen {
+  max-height: 160px;
+  opacity: 1;
+  margin-top: 8px;
+  padding: 10px 12px;
+}
+
 .rightPanel {
-  padding: 52px 52px;
+  padding: 56px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -128,7 +163,7 @@
 
 .formSubtitle {
   font-size: 14px;
-  color: #64748b;
+  color: #475569;
   margin-bottom: 36px;
 }
 
@@ -136,70 +171,140 @@
   margin-bottom: 20px;
 }
 
+.fieldHint {
+  margin-top: 8px;
+  margin-bottom: 0;
+  font-size: 12px;
+  color: #475569;
+}
+
+.fieldError {
+  margin-top: 8px;
+  margin-bottom: 0;
+  font-size: 13px;
+  color: #b91c1c;
+}
+
 .forgotRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 8px;
+  gap: 12px;
 }
 
 .forgotLink {
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   color: #1d4ed8;
   text-decoration: none;
   letter-spacing: 0.8px;
   text-transform: uppercase;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
 }
 
 .forgotLink:hover {
   color: #1e40af;
 }
 
-.divider {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 24px 0;
-  color: #94a3b8;
-  font-size: 13px;
+.passwordStrength {
+  margin-top: 10px;
 }
 
-.divider::before,
-.divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: #e2e8f0;
-}
-
-.googleBtn {
+.passwordStrengthBar {
   width: 100%;
-  background: #ffffff;
-  color: #1e293b;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 14px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  transition: background 0.2s;
+  height: 8px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
 }
 
-.googleBtn:hover {
-  background: #f8fafc;
+.passwordStrengthFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.2s ease;
+}
+
+.passwordStrengthweak {
+  background: #ef4444;
+}
+
+.passwordStrengthmedium {
+  background: #f59e0b;
+}
+
+.passwordStrengthstrong {
+  background: #22c55e;
+}
+
+.passwordStrengthText {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #334155;
+}
+
+.alert {
+  border-radius: 12px;
+  border: 1px solid transparent;
+  padding: 12px 14px;
+  margin-top: 8px;
+}
+
+.alertError {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.alertWarning {
+  background: #fffbeb;
+  border-color: #fcd34d;
+}
+
+.alertInfo {
+  background: #eff6ff;
+  border-color: #93c5fd;
+}
+
+.alertTitle {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.alertBody {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #334155;
+}
+
+.securityInfo {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: #1d4ed8;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #ffffff;
+  animation: spin 0.8s linear infinite;
 }
 
 .signupRow {
   text-align: center;
   margin-top: 24px;
   font-size: 14px;
-  color: #64748b;
+  color: #475569;
 }
 
 .signupLink {
@@ -207,15 +312,110 @@
   font-weight: 600;
   text-decoration: none;
   margin-left: 4px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
 }
 
 .signupLink:hover {
   color: #1e40af;
 }
 
-@media (max-width: 768px) {
+.forgotBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 40;
+}
+
+.forgotBackdropOpen {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.forgotModal {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(420px, 100vw);
+  height: 100vh;
+  background: #ffffff;
+  box-shadow: -10px 0 30px rgba(15, 23, 42, 0.2);
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+  z-index: 41;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.forgotModalOpen {
+  transform: translateX(0);
+}
+
+.forgotHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.forgotHeader h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.forgotClose {
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.forgotText {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #475569;
+}
+
+.forgotForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.forgotLink:focus-visible,
+.signupLink:focus-visible,
+.securityBadge:focus-visible,
+.forgotClose:focus-visible {
+  outline: 3px solid #1d4ed8;
+  outline-offset: 2px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1024px) {
   .body {
-    padding: 16px;
+    padding: 18px;
   }
 
   .card {
@@ -223,10 +423,46 @@
   }
 
   .leftPanel {
+    min-height: 290px;
+    padding: 44px 36px;
+    gap: 24px;
+  }
+
+  .rightPanel {
+    padding: 44px 30px;
+  }
+
+  .securityBadgeWrap {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .body {
+    padding: 14px;
+    align-items: center;
+  }
+
+  .card {
+    max-width: 560px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+  }
+
+  .leftPanel {
     display: none;
   }
 
   .rightPanel {
-    padding: 36px 24px;
+    padding: 32px 22px;
+  }
+
+  .forgotModal {
+    width: 100vw;
+    padding: 24px 18px;
+  }
+
+  .forgotLink,
+  .signupLink {
+    min-height: 44px;
   }
 }

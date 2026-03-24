@@ -141,8 +141,7 @@ export default function LandingPage() {
                     </div>
                     <div className={styles.sidebarGroup}>
                       <div className={styles.sidebarLabel}>GST Reconciliation</div>
-                      <div className={styles.sidebarItem}>2B Matching</div>
-                      <div className={styles.sidebarItem}>4A Reconciliation</div>
+                      <div className={styles.sidebarItem}>GST Reconciliation</div>
                     </div>
                   </div>
                   <div className={styles.placeholderContent}>
@@ -185,3 +184,4 @@ export default function LandingPage() {
     </div>
   )
 }
+

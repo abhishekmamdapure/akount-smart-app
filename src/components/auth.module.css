@@ -25,6 +25,8 @@
   font-weight: 700;
   color: #2563eb;
   text-decoration: none;
+  display: inline-flex;
+  align-items: center;
 }
 
 .navCenter {
@@ -53,6 +55,8 @@
   font-size: 14px;
   color: #475569;
   text-decoration: none;
+  display: inline-flex;
+  align-items: center;
 }
 
 .navBackLink:hover {
@@ -72,6 +76,8 @@
   text-decoration: none;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  min-height: 44px;
 }
 
 .navBtn:hover {
@@ -121,6 +127,8 @@
   font-size: 13px;
   color: #64748b;
   text-decoration: none;
+  display: inline-flex;
+  align-items: center;
 }
 
 .footerLink:hover {
@@ -152,7 +160,7 @@
 }
 
 .input::placeholder {
-  color: #94a3b8;
+  color: #64748b;
 }
 
 .input:focus {
@@ -173,6 +181,23 @@
   cursor: pointer;
   display: flex;
   align-items: center;
+}
+
+.inputIconButton {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .primaryBtn {
@@ -206,6 +231,18 @@
   cursor: not-allowed;
 }
 
+.navLogo:focus-visible,
+.navLink:focus-visible,
+.navBackLink:focus-visible,
+.navBtn:focus-visible,
+.footerLink:focus-visible,
+.primaryBtn:focus-visible,
+.inputIconButton:focus-visible,
+.input:focus-visible {
+  outline: 3px solid #1d4ed8;
+  outline-offset: 2px;
+}
+
 .errorMsg {
   font-size: 13px;
   color: #ef4444;
@@ -216,4 +253,13 @@
   font-size: 13px;
   color: #16a34a;
   margin-top: 4px;
+}
+
+@media (max-width: 768px) {
+  .navLogo,
+  .navBackLink,
+  .footerLink,
+  .navBtn {
+    min-height: 44px;
+  }
 }

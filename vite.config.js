@@ -8,7 +8,22 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:3001',
         changeOrigin: true,
-      }
+      },
+      '/invoice-processing-proxy': {
+        target: 'https://gst-tools-production.up.railway.app',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/invoice-processing-proxy/, ''),
+      },
+      '/tally-xml-proxy': {
+        target: 'https://gst-tools-production.up.railway.app',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/tally-xml-proxy/, ''),
+      },
+      '/gst-reconciliation-proxy': {
+        target: 'https://gst-tools-production.up.railway.app',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/gst-reconciliation-proxy/, ''),
+      },
     }
   }
 })

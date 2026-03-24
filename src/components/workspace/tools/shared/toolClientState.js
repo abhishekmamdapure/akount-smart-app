@@ -72,3 +72,62 @@ export function useToolClients({ authReady, currentUser, refreshKey = 0 }) {
     status,
   }
 }
+
+function formatSearchableText(client) {
+  return String(client?.name || '').toLowerCase()
+}
+
+export function useWorkspaceToolClient(outletContext = {}) {
+  const authReady = outletContext.authReady ?? false
+  const currentUser = outletContext.currentUser ?? null
+  const refreshKey = outletContext.clientRefreshKey ?? 0
+  const activeToolClientId = outletContext.activeToolClientId ?? ''
+  const setActiveToolClientId = outletContext.setActiveToolClientId ?? (() => {})
+
+  const { clientLookup, clients, errorMessage, reloadClients, status } = useToolClients({
+    authReady,
+    currentUser,
+    refreshKey,
+  })
+
+  const [query, setQuery] = useState('')
+
+  const filteredClients = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase()
+
+    if (!normalizedQuery) {
+      return clients
+    }
+
+    return clients.filter((client) => formatSearchableText(client).includes(normalizedQuery))
+  }, [clients, query])
+
+  const selectedClient = activeToolClientId ? clientLookup.get(String(activeToolClientId)) || null : null
+
+  useEffect(() => {
+    if (!activeToolClientId || status !== 'ready') {
+      return
+    }
+
+    if (!clientLookup.has(String(activeToolClientId))) {
+      setActiveToolClientId('')
+    }
+  }, [activeToolClientId, clientLookup, setActiveToolClientId, status])
+
+  function handleSelectClient(clientId) {
+    setActiveToolClientId(String(clientId))
+    setQuery('')
+  }
+
+  return {
+    clients,
+    errorMessage,
+    filteredClients,
+    handleSelectClient,
+    query,
+    reloadClients,
+    selectedClient,
+    setQuery,
+    status,
+  }
+}

@@ -1,4 +1,22 @@
-﻿export const USE_TEST_CRM_USER = true
+function parseBooleanEnv(value, fallback = false) {
+  if (value == null) {
+    return fallback
+  }
+
+  const normalized = String(value).trim().toLowerCase()
+
+  if (['1', 'true', 'yes', 'on'].includes(normalized)) {
+    return true
+  }
+
+  if (['0', 'false', 'no', 'off'].includes(normalized)) {
+    return false
+  }
+
+  return fallback
+}
+
+export const USE_TEST_CRM_USER = parseBooleanEnv(import.meta.env.VITE_USE_TEST_CRM_USER, false)
 
 export const TEST_CRM_USER = {
   id: 'test_user_id',

@@ -4,6 +4,130 @@
   gap: 20px;
 }
 
+.toolHero {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.toolHeroHeader,
+.toolHeroCornerTop,
+.toolContextHeader,
+.toolHeroClientMain,
+.toolHeroActions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.toolHeroHeader {
+  align-items: stretch;
+}
+
+.toolHeroCopy {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.toolHeroCorner {
+  display: flex;
+  min-width: min(380px, 100%);
+  max-width: 420px;
+  flex: 0 0 380px;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.toolHeroCornerTop {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.toolHeroCornerLabel,
+.toolHeroClientLabel,
+.toolContextLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7e8798;
+}
+
+.toolHeroClientCard,
+.toolContextPanel,
+.toolContextCard {
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.08);
+}
+
+.toolHeroClientCard {
+  padding: 16px;
+}
+
+.toolHeroClientCardActive {
+  background: linear-gradient(135deg, rgba(236, 242, 255, 0.94), rgba(255, 255, 255, 0.98));
+}
+
+.toolHeroClientMain {
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.toolHeroClientMark {
+  display: inline-flex;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: rgba(49, 94, 251, 0.1);
+  color: var(--color-primary-strong);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.toolHeroClientCard strong,
+.toolContextCard strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-text);
+}
+
+.toolHeroClientMeta,
+.toolContextCard p {
+  margin-top: 10px;
+  color: var(--color-text-soft);
+  line-height: 1.55;
+}
+
+.toolHeroActions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.toolContextPanel {
+  padding: 18px;
+}
+
+.toolContextHeader {
+  align-items: stretch;
+}
+
+.toolContextGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.toolContextCard {
+  padding: 16px;
+}
+
 .sectionTitle {
   margin-top: 6px;
   font-size: clamp(1.25rem, 2vw, 1.6rem);
@@ -126,6 +250,331 @@
   position: relative;
 }
 
+.clientDropdownSimpleTrigger {
+  width: 100%;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid rgba(88, 99, 119, 0.22);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #fff;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease, color 160ms ease;
+}
+
+.clientDropdownSimpleTriggerCompact {
+  min-height: 42px;
+  padding: 8px 10px;
+}
+
+.clientDropdownSimpleTriggerActive {
+  border-color: rgba(49, 94, 251, 0.45);
+  box-shadow: 0 0 0 2px rgba(49, 94, 251, 0.12);
+}
+
+.clientDropdownSimpleTrigger:hover:not(:disabled) {
+  border-color: rgba(88, 99, 119, 0.3);
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.clientDropdownSimpleTrigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.clientDropdownSimpleTrigger:focus-visible {
+  outline: none;
+  border-color: rgba(49, 94, 251, 0.45);
+  box-shadow: 0 0 0 3px rgba(49, 94, 251, 0.14);
+}
+
+.clientDropdownSimpleTriggerContent {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.clientDropdownSimpleValue {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.clientDropdownSimpleTriggerIcon {
+  flex: 0 0 auto;
+  color: #7e8798;
+  transition: transform 180ms ease, color 160ms ease;
+}
+
+.clientDropdownSimpleTriggerIconOpen {
+  transform: rotate(180deg);
+  color: var(--color-primary-strong);
+}
+
+.clientDropdownSimpleMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid rgba(88, 99, 119, 0.16);
+  box-shadow: 0 18px 36px rgba(10, 18, 32, 0.16), 0 4px 12px rgba(10, 18, 32, 0.06);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px);
+  transition: opacity 180ms ease, transform 180ms ease;
+  overflow: hidden;
+}
+
+.clientDropdownSimpleMenuCompact {
+  width: 100%;
+  left: auto;
+  right: 0;
+}
+
+.clientDropdownSimpleMenuOpen {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.clientDropdownSimpleMenuClosed {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px);
+}
+
+.clientDropdownSimpleSearch {
+  position: relative;
+  display: block;
+}
+
+.clientDropdownSimpleSearchIcon {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #7e8798;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.clientDropdownSimpleSearch input {
+  width: 100%;
+  border: 1px solid rgba(88, 99, 119, 0.2);
+  border-radius: 10px;
+  padding: 10px 40px 10px 38px;
+  background: #fff;
+  color: var(--color-text);
+  font-size: 0.92rem;
+  appearance: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.clientDropdownSimpleSearch input::placeholder {
+  color: var(--color-text-soft);
+  opacity: 0.94;
+}
+
+.clientDropdownSimpleSearch input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.clientDropdownSimpleSearch input:focus,
+.clientDropdownSimpleSearch input:focus-visible {
+  outline: none;
+  border-color: rgba(49, 94, 251, 0.45);
+  box-shadow: 0 0 0 3px rgba(49, 94, 251, 0.12);
+}
+
+.clientDropdownSimpleSearchClear {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #7e8798;
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.clientDropdownSimpleSearchClear:hover {
+  background: rgba(236, 242, 255, 0.92);
+  color: var(--color-primary-strong);
+}
+
+.clientDropdownSimpleSearchClear:focus-visible {
+  outline: none;
+  background: rgba(236, 242, 255, 0.92);
+  box-shadow: 0 0 0 3px rgba(49, 94, 251, 0.12);
+  color: var(--color-primary-strong);
+}
+
+.clientDropdownSimpleDivider {
+  height: 1px;
+  margin-top: 12px;
+  background: rgba(88, 99, 119, 0.12);
+}
+
+.clientDropdownSimpleList {
+  margin-top: 12px;
+  max-height: 280px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 2px;
+}
+
+.clientDropdownSimpleList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.clientDropdownSimpleList::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(88, 99, 119, 0.18);
+}
+
+.clientDropdownSimpleOption {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid rgba(88, 99, 119, 0.15);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: #fff;
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.92rem;
+  font-weight: 500;
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
+}
+
+.clientDropdownSimpleOption:hover {
+  border-color: rgba(88, 99, 119, 0.22);
+  background: rgba(245, 248, 252, 0.96);
+}
+
+.clientDropdownSimpleOption:focus-visible {
+  outline: none;
+  border-color: rgba(49, 94, 251, 0.32);
+  box-shadow: 0 0 0 3px rgba(49, 94, 251, 0.12);
+}
+
+.clientDropdownSimpleOptionHighlighted {
+  border-color: rgba(49, 94, 251, 0.24);
+  background: rgba(236, 242, 255, 0.56);
+}
+
+.clientDropdownSimpleOptionText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.clientDropdownSimpleOptionIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(49, 94, 251, 0.12);
+  color: var(--color-primary-strong);
+  flex: 0 0 auto;
+}
+
+.clientDropdownSimpleOptionActive {
+  border-color: rgba(49, 94, 251, 0.42);
+  background: linear-gradient(135deg, rgba(229, 237, 255, 0.96), rgba(255, 255, 255, 0.98));
+  box-shadow: inset 0 0 0 1px rgba(49, 94, 251, 0.08);
+  color: var(--color-primary-strong);
+}
+
+.clientDropdownSimpleOptionActive .clientDropdownSimpleOptionText {
+  font-weight: 600;
+}
+
+.clientDropdownSimpleState,
+.clientDropdownSimpleEmpty {
+  margin-top: 12px;
+  border: 1px solid rgba(88, 99, 119, 0.15);
+  border-radius: 10px;
+  padding: 12px;
+  background: rgba(245, 248, 252, 0.88);
+  color: var(--color-text-soft);
+  font-size: 0.84rem;
+}
+
+.clientDropdownSimplePrimaryAction,
+.clientDropdownSimpleSecondaryAction {
+  margin-top: 8px;
+  border: 1px solid rgba(88, 99, 119, 0.2);
+  border-radius: 9px;
+  padding: 8px 10px;
+  background: #fff;
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
+}
+
+.clientDropdownSimplePrimaryAction:hover,
+.clientDropdownSimpleSecondaryAction:hover {
+  border-color: rgba(49, 94, 251, 0.22);
+  background: rgba(236, 242, 255, 0.9);
+  color: var(--color-primary-strong);
+}
+
+.clientDropdownSimplePrimaryAction:focus-visible,
+.clientDropdownSimpleSecondaryAction:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(49, 94, 251, 0.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .clientDropdownSimpleTrigger,
+  .clientDropdownSimpleTriggerIcon,
+  .clientDropdownSimpleMenu,
+  .clientDropdownSimpleSearch input,
+  .clientDropdownSimpleSearchClear,
+  .clientDropdownSimpleOption,
+  .clientDropdownSimplePrimaryAction,
+  .clientDropdownSimpleSecondaryAction {
+    transition-duration: 0.01ms;
+  }
+}
+
+.dropdownWrapCompact {
+  width: 100%;
+}
+
 .dropdownTrigger {
   width: 100%;
   border: 0;
@@ -135,6 +584,20 @@
   box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.08);
   cursor: pointer;
   transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.dropdownTriggerCompact {
+  min-height: 78px;
+  border-radius: 20px;
+  padding: 14px 16px;
+}
+
+.dropdownTriggerBadge {
+  min-height: 76px;
+  border-radius: 18px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(246, 249, 255, 0.98));
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.12), 0 8px 20px rgba(88, 99, 119, 0.08);
 }
 
 .dropdownTrigger:hover,
@@ -187,6 +650,41 @@
   flex: 0 0 auto;
 }
 
+.dropdownBadgeContent {
+  gap: 12px;
+}
+
+.dropdownBadgeIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(49, 94, 251, 0.1);
+  color: var(--color-primary-strong);
+  flex: 0 0 auto;
+  box-shadow: inset 0 0 0 1px rgba(49, 94, 251, 0.14);
+}
+
+.dropdownTriggerLabelBadge {
+  color: #6f7990;
+  letter-spacing: 0.12em;
+}
+
+.dropdownBadgeText strong {
+  display: block;
+  font-size: 0.98rem;
+  color: var(--color-text);
+}
+
+.dropdownBadgeText span {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: var(--color-text-soft);
+}
+
 .dropdownTriggerText {
   min-width: 0;
 }
@@ -224,6 +722,15 @@
   font-size: 0.84rem;
 }
 
+.dropdownTriggerBadge .dropdownTriggerText strong {
+  margin-top: 0;
+  font-size: 0.88rem;
+}
+
+.dropdownTriggerBadge .dropdownTriggerText span {
+  font-size: 0.75rem;
+}
+
 .dropdownChevron {
   color: #7e8798;
   transition: transform 160ms ease;
@@ -246,6 +753,17 @@
   backdrop-filter: blur(18px);
 }
 
+.dropdownMenuCompact {
+  width: min(440px, calc(100vw - 32px));
+  left: auto;
+  right: 0;
+}
+
+.dropdownMenuAlignEnd {
+  left: auto;
+  right: 0;
+}
+
 .dropdownSearch {
   display: flex;
   align-items: center;
@@ -256,6 +774,10 @@
   background: rgba(245, 248, 252, 0.96);
   box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.08);
   color: #7e8798;
+}
+
+.dropdownSearchMinimal {
+  margin-top: 0;
 }
 
 .dropdownSearch input {
@@ -298,6 +820,43 @@
   text-align: left;
   cursor: pointer;
   transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.dropdownOptionSimple {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+}
+
+.dropdownOptionSimpleBody {
+  min-width: 0;
+}
+
+.dropdownOptionSimpleName {
+  display: block;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.dropdownOptionSimpleMeta {
+  display: block;
+  margin-top: 3px;
+  font-size: 0.78rem;
+  color: var(--color-text-soft);
+}
+
+.dropdownOptionSelectedIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(49, 94, 251, 0.12);
+  color: var(--color-primary-strong);
+  flex: 0 0 auto;
 }
 
 .dropdownOptionActive {
@@ -428,6 +987,431 @@
   gap: 18px;
 }
 
+.invoicePage {
+  gap: 18px;
+}
+
+.invoiceTopbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.invoiceTopbarLeft {
+  min-width: 0;
+}
+
+.invoicePageTitle {
+  margin-top: 4px;
+  font-size: clamp(1.35rem, 2vw, 1.65rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--color-text);
+}
+
+.invoiceClientSlot {
+  width: min(320px, 100%);
+  flex: 0 1 320px;
+}
+
+.invoiceMainCard {
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.08);
+  overflow: hidden;
+}
+
+.invoiceCardTop {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+}
+
+.invoiceUploadZone,
+.invoiceControlsPanel,
+.invoiceHistorySection {
+  padding: 22px;
+}
+
+.invoiceUploadZone {
+  border-right: 1px solid rgba(88, 99, 119, 0.08);
+}
+
+.invoiceSectionLabel {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7e8798;
+}
+
+.invoiceUploadArea {
+  position: relative;
+  margin-top: 12px;
+  display: flex;
+  min-height: 260px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px dashed rgba(88, 99, 119, 0.22);
+  border-radius: 18px;
+  padding: 28px 18px;
+  background: rgba(245, 248, 252, 0.72);
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.invoiceUploadArea:hover {
+  background: rgba(245, 248, 252, 0.94);
+}
+
+.invoiceUploadAreaActive {
+  border-color: rgba(49, 94, 251, 0.28);
+  background: rgba(236, 242, 255, 0.82);
+}
+
+.invoiceUploadAreaDisabled {
+  cursor: not-allowed;
+  opacity: 0.78;
+}
+
+.invoiceUploadIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--color-text-soft);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.08);
+}
+
+.tallyUploadClearButton {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(220, 38, 38, 0.12);
+  color: #b91c1c;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(220, 38, 38, 0.28);
+  transition: background-color 160ms ease, opacity 160ms ease;
+}
+
+.tallyUploadClearButton:hover {
+  background: rgba(220, 38, 38, 0.18);
+}
+
+.tallyUploadClearButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.invoiceUploadArea h2 {
+  font-size: 0.96rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.invoiceUploadArea p,
+.invoiceModeDescription,
+.invoiceStatusCopy span {
+  color: var(--color-text-soft);
+  line-height: 1.55;
+  font-size: 0.84rem;
+}
+
+.invoiceUploadTags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.invoiceTag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 9px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--color-text-soft);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.invoiceControlsPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.invoiceModeToggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.invoiceModeButton {
+  border: 0;
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.12);
+  color: var(--color-text-soft);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.invoiceModeButtonActive {
+  background: rgba(236, 242, 255, 0.96);
+  box-shadow: inset 0 0 0 1px rgba(49, 94, 251, 0.22);
+  color: var(--color-primary-strong);
+}
+
+.invoiceModeDescription {
+  margin-top: 12px;
+}
+
+.invoiceStatusRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 10px;
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: rgba(245, 248, 252, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.08);
+}
+
+.invoiceStatusDot {
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 999px;
+  background: rgba(121, 131, 147, 0.4);
+  flex: 0 0 auto;
+}
+
+.invoiceStatusDotReady {
+  background: var(--color-primary);
+}
+
+.invoiceStatusDotProcessing {
+  background: #d0a21f;
+  box-shadow: 0 0 0 4px rgba(208, 162, 31, 0.14);
+}
+
+.invoiceStatusDotSuccess {
+  background: var(--color-success);
+}
+
+.invoiceStatusDotWarning {
+  background: var(--color-warning);
+}
+
+.invoiceStatusCopy strong {
+  display: block;
+  color: var(--color-text);
+  font-size: 0.88rem;
+}
+
+.invoiceButtonStack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.invoicePrimaryButton,
+.invoiceSecondaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  border: 0;
+  border-radius: 14px;
+  padding: 10px 14px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 160ms ease, background-color 160ms ease;
+}
+
+.invoicePrimaryButton {
+  background: linear-gradient(135deg, var(--color-primary-strong), #5978ff);
+  color: #fff;
+  box-shadow: 0 12px 24px rgba(49, 94, 251, 0.18);
+}
+
+.invoiceSecondaryButton {
+  background: transparent;
+  color: var(--color-text-soft);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.12);
+}
+
+.invoicePrimaryButton:disabled,
+.invoiceSecondaryButton:disabled,
+.invoiceHistoryClear:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.invoiceCardDivider {
+  height: 1px;
+  background: rgba(88, 99, 119, 0.08);
+}
+
+.invoiceHistorySection {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.invoiceHistoryHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.invoiceHistoryHeader h2 {
+  font-size: 0.96rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.invoiceHistoryClear,
+.invoiceHistoryAction {
+  border: 0;
+  background: transparent;
+  color: var(--color-primary-strong);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.invoiceHistoryAction {
+  text-decoration: none;
+}
+
+.invoiceHistoryActionSecondary {
+  color: var(--color-text-soft);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.invoiceHistoryActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.invoiceHistoryTableWrap {
+  overflow-x: auto;
+}
+
+.invoiceHistoryTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.invoiceHistoryTable th {
+  padding: 0 10px 10px;
+  text-align: left;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7e8798;
+}
+
+.invoiceHistoryTable td {
+  padding: 12px 10px;
+  border-top: 1px solid rgba(88, 99, 119, 0.08);
+  color: var(--color-text-soft);
+  font-size: 0.84rem;
+}
+
+.invoiceHistoryTable tbody td:first-child {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.invoiceHistoryStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.invoiceHistoryStatusProcessing {
+  background: rgba(255, 245, 223, 0.92);
+  color: #9b640f;
+}
+
+.invoiceHistoryStatusCompleted {
+  background: rgba(231, 247, 240, 0.96);
+  color: #08784b;
+}
+
+.invoiceHistoryStatusFailed {
+  background: rgba(252, 235, 235, 0.96);
+  color: #a12727;
+}
+
+.invoiceHistorySpinner {
+  width: 11px;
+  height: 11px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 999px;
+  animation: invoiceHistorySpin 0.85s linear infinite;
+  flex: 0 0 auto;
+}
+
+.invoiceHistoryMuted {
+  font-size: 0.8rem;
+  color: #8a94a6;
+}
+
+.tallyHistoryFileLink {
+  color: var(--color-primary-strong);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.tallyHistoryFileLink:hover {
+  text-decoration: underline;
+}
+
+.invoiceHistoryEmpty {
+  padding: 22px 10px;
+  text-align: center;
+  color: var(--color-text-soft);
+}
+
+.invoiceCanvas {
+  display: flex;
+  flex-direction: column;
+}
+
 .uploadCard,
 .helperCard,
 .resultCard,
@@ -444,6 +1428,118 @@
 
 .uploadCardHeader {
   min-width: 0;
+}
+
+.invoiceHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.invoiceMetaRow,
+.invoiceResultActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.invoiceMetaRow {
+  justify-content: flex-end;
+}
+
+.invoiceMetaPill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: rgba(49, 94, 251, 0.08);
+  color: var(--color-primary-strong);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.invoiceMetaPillMuted {
+  background: rgba(121, 131, 147, 0.12);
+  color: #667084;
+}
+
+.invoiceLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.75fr);
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.invoiceDropzonePanel,
+.invoiceControlPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.invoiceDropzone {
+  margin-top: 0;
+  min-height: 280px;
+}
+
+.invoiceSidebarBlock,
+.invoiceFileCard,
+.invoiceStatusCard,
+.invoiceResultCard {
+  border-radius: 18px;
+  padding: 16px;
+  background: rgba(245, 248, 252, 0.96);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.08);
+}
+
+.invoiceModeSwitch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.invoiceModeOption {
+  border: 0;
+  border-radius: 14px;
+  padding: 11px 12px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--color-text-soft);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.invoiceModeOptionActive {
+  background: linear-gradient(135deg, rgba(219, 229, 255, 0.94), rgba(255, 255, 255, 0.98));
+  color: var(--color-primary-strong);
+  box-shadow: inset 0 0 0 1px rgba(49, 94, 251, 0.18);
+}
+
+.invoiceActionStack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.invoiceActionStack .uploadAction,
+.invoiceActionStack .uploadActionSecondary,
+.invoiceResultActions .resultAction,
+.invoiceResultActions .resultActionSecondary {
+  width: 100%;
+  justify-content: center;
+}
+
+.invoiceFileCard strong,
+.invoiceResultCard strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-text);
+}
+
+.invoiceStatusCard {
+  margin-top: 0;
 }
 
 .uploadIcon,
@@ -531,6 +1627,10 @@
 
 .dropzoneDisabled {
   opacity: 0.7;
+}
+
+.toolDropzoneLocked {
+  opacity: 0.76;
 }
 
 .dropzone strong {
@@ -751,9 +1851,294 @@
   align-items: center;
 }
 
+.pdfToolsPage {
+  gap: 18px;
+}
+
+.pdfToolsTopbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.pdfToolHeading {
+  margin-top: 8px;
+  color: var(--color-text);
+  font-size: clamp(1.05rem, 1.8vw, 1.28rem);
+}
+
+.pdfToolCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.pdfControlGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.pdfField,
+.pdfFieldWide {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pdfFieldWide {
+  grid-column: 1 / -1;
+}
+
+.pdfField span,
+.pdfFieldWide span {
+  color: #7e8798;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.pdfField input,
+.pdfField select,
+.pdfFieldWide input,
+.pdfFieldWide select {
+  width: 100%;
+  min-height: 42px;
+  border: 0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #fff;
+  color: var(--color-text);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.12);
+}
+
+.pdfField input:focus,
+.pdfField select:focus,
+.pdfFieldWide input:focus,
+.pdfFieldWide select:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 1px rgba(49, 94, 251, 0.3), 0 0 0 3px rgba(49, 94, 251, 0.08);
+}
+
+.pdfToggleField {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.12);
+  color: var(--color-text-soft);
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.pdfFileList {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pdfFileListItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(245, 248, 252, 0.96);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.08);
+  color: var(--color-text);
+  font-size: 0.86rem;
+}
+
+.pdfThumbGrid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.pdfThumbCard {
+  border-radius: 14px;
+  padding: 10px;
+  background: rgba(245, 248, 252, 0.96);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: grab;
+}
+
+.pdfThumbCard img {
+  width: 100%;
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.08);
+}
+
+.pdfThumbCardRemoved {
+  opacity: 0.55;
+}
+
+.pdfThumbMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--color-text);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.pdfPreviewSection {
+  margin-top: 18px;
+}
+
+.pdfPreviewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.pdfPreviewStrip {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 6px 2px 10px;
+}
+
+.pdfPreviewItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.pdfPreviewCard {
+  position: relative;
+  width: 118px;
+  flex: 0 0 118px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-radius: 16px;
+  padding: 10px;
+  background: rgba(245, 248, 252, 0.96);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.1);
+}
+
+.pdfPreviewImage {
+  width: 100%;
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.08);
+}
+
+.pdfPreviewLabel {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.pdfSplitDivider {
+  min-width: 84px;
+  border: 0;
+  border-radius: 999px;
+  padding: 9px 10px;
+  background: rgba(245, 248, 252, 0.96);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.12);
+  color: var(--color-text-soft);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 160ms ease, background-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
+}
+
+.pdfSplitDivider:hover,
+.pdfInlineAction:hover {
+  transform: translateY(-1px);
+}
+
+.pdfSplitDividerActive {
+  background: linear-gradient(135deg, rgba(219, 229, 255, 0.92), rgba(255, 255, 255, 0.98));
+  box-shadow: inset 0 0 0 1px rgba(49, 94, 251, 0.22), 0 10px 22px rgba(49, 94, 251, 0.1);
+  color: var(--color-primary-strong);
+}
+
+.pdfInfoCard {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(245, 248, 252, 0.96);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.12);
+  color: var(--color-text);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.pdfInlineAction {
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.12);
+  color: var(--color-text-soft);
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 160ms ease, background-color 160ms ease, color 160ms ease;
+}
+
+.pdfMergeBoundary {
+  position: absolute;
+  top: -5px;
+  left: 12px;
+  right: 12px;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-primary), #6a83ff);
+}
+
+@keyframes invoiceHistorySpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (max-width: 1080px) {
+
   .clientSelectionRow,
   .toolGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .toolHeroHeader,
+  .toolContextHeader {
+    flex-direction: column;
+  }
+
+  .toolHeroCorner {
+    min-width: 100%;
+    max-width: none;
+    flex-basis: auto;
+  }
+
+  .toolContextGrid {
     grid-template-columns: 1fr;
   }
 
@@ -767,12 +2152,19 @@
 }
 
 @media (max-width: 820px) {
+
   .heroStats,
   .modeGrid,
-  .clientSummaryGrid {
+  .clientSummaryGrid,
+  .invoiceLayout {
     grid-template-columns: 1fr;
   }
 
+  .invoiceTopbar,
+  .invoiceCardTop,
+  .invoiceHeader,
+  .pdfToolsTopbar,
+  .toolHeroActions,
   .statusRow,
   .resultFooter,
   .dropdownMenuHeader {
@@ -781,16 +2173,45 @@
   }
 
   .uploadHeader,
-  .uploadMeta {
+  .uploadMeta,
+  .invoiceMetaRow {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .invoiceUploadZone {
+    border-right: 0;
+    border-bottom: 1px solid rgba(88, 99, 119, 0.08);
   }
 }
 
 @media (max-width: 640px) {
+
   .uploadActions,
   .resultActions {
     width: 100%;
+  }
+
+  .dropdownMenuCompact {
+    width: min(100vw - 28px, 440px);
+  }
+
+  .pdfControlGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .pdfThumbGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pdfPreviewCard {
+    width: 102px;
+    flex-basis: 102px;
+  }
+
+  .pdfPreviewHeader {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .uploadAction,
@@ -806,7 +2227,927 @@
     padding: 20px 18px;
   }
 
+  .invoiceUploadZone,
+  .invoiceControlsPanel,
+  .invoiceHistorySection {
+    padding: 18px;
+  }
+
+  .invoiceClientSlot {
+    width: 100%;
+    flex-basis: auto;
+  }
+
+  .invoiceUploadArea {
+    min-height: 220px;
+  }
+
+  .invoiceDropzone {
+    min-height: 220px;
+  }
+
   .dropdownMenu {
     padding: 14px;
+  }
+}
+
+.gstTypeSection {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px;
+  background: linear-gradient(180deg, rgba(247, 250, 255, 0.92), rgba(255, 255, 255, 0.96));
+}
+
+.gstTypeHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gstTypeIntro {
+  color: var(--color-text-soft);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.gstTypeToggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.gstTypeOption {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 0;
+  border-radius: 18px;
+  padding: 18px;
+  background: rgba(245, 248, 252, 0.86);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.08);
+  color: var(--color-text-soft);
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.gstTypeOption:hover {
+  background: rgba(239, 244, 252, 0.96);
+  transform: translateY(-1px);
+}
+
+.gstTypeOption:disabled,
+.gstToggleButton:disabled,
+.gstStepButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.64;
+}
+
+.gstTypeOption strong {
+  color: var(--color-text);
+  font-size: 0.98rem;
+}
+
+.gstTypeOption span:last-child {
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.gstTypeOptionLabel {
+  color: #6e7687;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.gstTypeOptionActive {
+  background: linear-gradient(180deg, rgba(235, 242, 255, 0.98), rgba(248, 251, 255, 0.98));
+  box-shadow: inset 0 0 0 1px rgba(49, 94, 251, 0.2), 0 14px 30px rgba(49, 94, 251, 0.08);
+}
+
+.gstTypeOptionActive .gstTypeOptionLabel,
+.gstTypeOptionActive strong {
+  color: var(--color-primary-strong);
+}
+
+.gstUploadGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.gstUploadArea {
+  min-height: 228px;
+}
+
+.gstControlStack {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.gstConfigCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-radius: 16px;
+  padding: 14px;
+  background: rgba(245, 248, 252, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.08);
+}
+
+.gstConfigCard strong {
+  display: block;
+  color: var(--color-text);
+  font-size: 0.88rem;
+}
+
+.gstConfigCard span {
+  color: var(--color-text-soft);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.gstToggleButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  align-self: flex-start;
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.12);
+  color: var(--color-text-soft);
+  font-weight: 700;
+}
+
+.gstToggleTrack {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(126, 135, 152, 0.38);
+  transition: background-color 160ms ease;
+}
+
+.gstToggleThumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.16);
+  transition: transform 160ms ease;
+}
+
+.gstToggleButtonActive {
+  color: var(--color-primary-strong);
+  box-shadow: inset 0 0 0 1px rgba(49, 94, 251, 0.18);
+}
+
+.gstToggleButtonActive .gstToggleTrack {
+  background: rgba(49, 94, 251, 0.58);
+}
+
+.gstToggleButtonActive .gstToggleThumb {
+  transform: translateX(18px);
+}
+
+.gstToleranceWrap {
+  position: relative;
+}
+
+.gstToleranceInput {
+  width: 100%;
+  border: 0;
+  border-radius: 14px;
+  padding: 12px 92px 12px 14px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.12);
+  color: var(--color-text);
+  font-size: 0.94rem;
+}
+
+.gstToleranceActions {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  display: flex;
+  gap: 8px;
+  transform: translateY(-50%);
+}
+
+.gstStepButton {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(245, 248, 252, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.12);
+  color: var(--color-text);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+@media (max-width: 1200px) {
+  .gstUploadGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .gstTypeToggle {
+    grid-template-columns: 1fr;
+  }
+
+  .gstToleranceInput {
+    padding-right: 80px;
+  }
+
+  .gstStepButton {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+.gstTypeOptionTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.gstTypeSelectionMark {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: rgba(49, 94, 251, 0.12);
+  color: var(--color-primary-strong);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.gstMatchingSection {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 22px 22px;
+  background: rgba(250, 251, 253, 0.82);
+}
+
+.gstMatchingIntro {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gstMatchingIntro p {
+  color: var(--color-text-soft);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.gstMatchingRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.gstMatchingRow .gstConfigCard {
+  min-height: 100%;
+}
+
+@media (max-width: 960px) {
+  .gstMatchingRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gstMinimalPage {
+  gap: 18px;
+}
+
+.gstMinimalHeader {
+  align-items: flex-start;
+}
+
+.gstMinimalTitle {
+  margin: 4px 0 0;
+}
+
+.gstMinimalClientSlot {
+  width: min(320px, 100%);
+}
+
+.gstMinimalCanvas {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.gstMinimalControlsCard,
+.gstMinimalStatusCard,
+.gstMinimalHistoryCard {
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.08);
+}
+
+.gstMinimalControlsCard,
+.gstMinimalHistoryCard,
+.gstMinimalStatusCard {
+  padding: 20px 22px;
+}
+
+.gstMinimalSectionLabel {
+  color: #7e8798;
+}
+
+.gstMinimalControlsRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 10px;
+  align-items: stretch;
+}
+
+.gstMinimalControlsSegment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 8px 20px;
+}
+
+.gstMinimalControlsSegment+.gstMinimalControlsSegment {
+  border-left: 1px solid rgba(88, 99, 119, 0.08);
+}
+
+.gstMinimalControlsSegmentType {
+  padding-right: 20px;
+}
+
+.gstMinimalRadioGroup {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+  gap: 12px;
+}
+
+.gstMinimalRadioOption {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  border-radius: 14px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.12);
+  color: var(--color-text-soft);
+  cursor: pointer;
+  transition: transform 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.gstMinimalRadioOption:hover {
+  transform: translateY(-1px);
+  background: rgba(245, 248, 252, 0.96);
+}
+
+.gstMinimalRadioInput {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.gstMinimalRadioIndicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid rgba(88, 99, 119, 0.22);
+  border-radius: 999px;
+  background: #ffffff;
+  flex: 0 0 auto;
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.05);
+  transition: border-color 160ms ease;
+}
+
+.gstMinimalRadioIndicatorInner {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: transparent;
+  transition: background-color 160ms ease;
+}
+
+.gstMinimalRadioOptionActive {
+  background: rgba(236, 242, 255, 0.96);
+  box-shadow: inset 0 0 0 1px rgba(49, 94, 251, 0.22), 0 10px 20px rgba(49, 94, 251, 0.08);
+  color: var(--color-primary-strong);
+}
+
+.gstMinimalRadioIndicatorActive {
+  border-color: rgba(49, 94, 251, 0.38);
+}
+
+.gstMinimalRadioIndicatorActive .gstMinimalRadioIndicatorInner {
+  background: var(--color-primary-strong);
+}
+
+.gstMinimalRadioText {
+  color: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.gstMinimalInfoDot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.14);
+  color: var(--color-text-soft);
+  font-size: 0.68rem;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+}
+
+.gstMinimalInfoWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.gstMinimalInfoDot:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.14), 0 0 0 3px rgba(49, 94, 251, 0.14);
+}
+
+.gstMinimalInfoPopup {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  z-index: 12;
+  width: max-content;
+  max-width: 220px;
+  border-radius: 12px;
+  padding: 8px 12px;
+  background: var(--color-text);
+  color: #fff;
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.45;
+  text-align: center;
+  white-space: normal;
+  box-shadow: 0 14px 28px rgba(23, 32, 51, 0.24);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translate(-50%, 4px);
+  transition: opacity 160ms ease, transform 160ms ease, visibility 160ms ease;
+}
+
+.gstMinimalInfoWrap:hover .gstMinimalInfoPopup,
+.gstMinimalInfoWrap:focus-within .gstMinimalInfoPopup {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}
+
+.gstMinimalDivider {
+  width: 1px;
+  min-height: 40px;
+  align-self: stretch;
+  background: rgba(88, 99, 119, 0.08);
+}
+
+.gstMinimalControlItem {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: auto;
+  gap: 12px;
+  min-height: 44px;
+}
+
+.gstMinimalControlLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text);
+  font-size: 0.84rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.gstMinimalSwitch {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.gstMinimalSwitch:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.gstMinimalSwitchTrack {
+  position: relative;
+  display: inline-flex;
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(126, 135, 152, 0.38);
+  transition: background-color 160ms ease;
+}
+
+.gstMinimalSwitchThumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.16);
+  transition: transform 160ms ease;
+}
+
+.gstMinimalSwitchActive .gstMinimalSwitchTrack {
+  background: rgba(49, 94, 251, 0.58);
+}
+
+.gstMinimalSwitchActive .gstMinimalSwitchThumb {
+  transform: translateX(18px);
+}
+
+.gstMinimalStepperWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  margin-left: 0;
+}
+
+.gstMinimalToleranceInput {
+  width: 104px;
+  border: 0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.12);
+  color: var(--color-text);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.gstMinimalToleranceInput:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 1px rgba(49, 94, 251, 0.22), 0 0 0 3px rgba(49, 94, 251, 0.08);
+}
+
+.gstMinimalStepperButton {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(245, 248, 252, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.12);
+  color: var(--color-text);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+}
+
+.gstMinimalSourceGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.gstMinimalUploadCard {
+  position: relative;
+  min-height: 176px;
+  border: 1px dashed rgba(88, 99, 119, 0.22);
+  border-radius: 18px;
+  padding: 18px 14px;
+  background: rgba(245, 248, 252, 0.72);
+  text-align: center;
+  transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.gstMinimalUploadCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.gstMinimalUploadCard:hover {
+  transform: translateY(-1px);
+  background: rgba(245, 248, 252, 0.94);
+}
+
+.gstMinimalUploadCardActive {
+  border-color: rgba(49, 94, 251, 0.28);
+  background: rgba(236, 242, 255, 0.82);
+}
+
+.gstMinimalUploadCardDisabled {
+  cursor: not-allowed;
+  opacity: 0.78;
+}
+
+.gstMinimalUploadIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--color-text-soft);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.08);
+}
+
+.gstMinimalUploadTitle {
+  color: var(--color-text);
+  font-size: 0.96rem;
+  font-weight: 600;
+}
+
+.gstMinimalUploadCopy {
+  max-width: 18rem;
+  color: var(--color-text-soft);
+  font-size: 0.84rem;
+  line-height: 1.55;
+  word-break: break-word;
+}
+
+.gstMinimalUploadMeta {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 9px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--color-text-soft);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.gstMinimalStatusCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 176px;
+}
+
+.gstMinimalStatusBlock {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-radius: 16px;
+  padding: 10px 12px;
+  background: rgba(245, 248, 252, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.08);
+}
+
+.gstMinimalStatusDot {
+  width: 6px;
+  height: 6px;
+  margin-top: 8px;
+  border-radius: 999px;
+  background: #d1d5db;
+  flex: 0 0 auto;
+}
+
+.gstMinimalStatusDotReady {
+  background: #4f46e5;
+}
+
+.gstMinimalStatusDotProcessing {
+  background: #d97706;
+}
+
+.gstMinimalStatusDotSuccess {
+  background: #16a34a;
+}
+
+.gstMinimalStatusDotWarning {
+  background: #dc2626;
+}
+
+.gstMinimalStatusCopy strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--color-text);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.gstMinimalStatusCopy span {
+  color: var(--color-text-soft);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.gstMinimalActionStack {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gstMinimalPrimaryButton,
+.gstMinimalSecondaryButton {
+  width: 100%;
+  min-height: 42px;
+}
+
+.gstMinimalPrimaryButton {
+  box-shadow: 0 12px 24px rgba(49, 94, 251, 0.18);
+}
+
+.gstMinimalSecondaryButton {
+  color: var(--color-text-soft);
+}
+
+.gstMinimalSecondaryButton:hover:not(:disabled),
+.gstMinimalStepperButton:hover:not(:disabled) {
+  background: rgba(236, 242, 255, 0.9);
+}
+
+.gstMinimalPrimaryButton:disabled,
+.gstMinimalSecondaryButton:disabled,
+.gstMinimalStepperButton:disabled,
+.gstMinimalToleranceInput:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.gstMinimalHistoryCard {
+  padding-bottom: 16px;
+}
+
+.gstMinimalUnmatchedCard {
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.08);
+  padding: 20px 22px;
+}
+
+.gstMinimalUnmatchedCard .invoiceHistoryHeader {
+  margin-bottom: 14px;
+}
+
+.gstMinimalUnmatchedBody {
+  min-height: 140px;
+  border-radius: 16px;
+  background: rgba(245, 248, 252, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.08);
+}
+
+.gstMinimalHistoryCard .invoiceHistoryTable {
+  table-layout: fixed;
+}
+
+.gstMinimalHistoryFileCell {
+  max-width: 220px;
+}
+
+.gstMinimalHistoryFileText,
+.gstMinimalHistoryFileLink {
+  display: inline-block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.gstMinimalHistoryFileText {
+  color: var(--color-text);
+}
+
+.gstMinimalHistoryFileLink {
+  font-weight: 700;
+}
+
+.gstMinimalHistoryCard .invoiceHistoryHeader {
+  margin-bottom: 16px;
+}
+
+.gstMinimalHistoryHeader {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 0.96rem;
+  font-weight: 600;
+}
+
+.gstMinimalHistoryCard .invoiceHistoryTable th {
+  color: #7e8798;
+}
+
+@media (max-width: 1180px) {
+  .gstMinimalSourceGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .gstMinimalStatusCard {
+    grid-column: 1 / -1;
+    min-height: 0;
+  }
+}
+
+@media (max-width: 940px) {
+  .gstMinimalControlsRow {
+    grid-template-columns: 1fr;
+  }
+
+  .gstMinimalControlsSegment {
+    padding: 0;
+  }
+
+  .gstMinimalControlsSegment+.gstMinimalControlsSegment {
+    padding-top: 16px;
+    padding-left: 0;
+    border-left: 0;
+    border-top: 1px solid rgba(88, 99, 119, 0.08);
+  }
+
+  .gstMinimalControlsSegmentType {
+    padding-right: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .gstMinimalHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .gstMinimalClientSlot {
+    width: 100%;
+  }
+
+  .gstMinimalSourceGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .gstMinimalUploadCard,
+  .gstMinimalStatusCard {
+    min-height: 0;
+  }
+
+  .gstMinimalControlsRow,
+  .gstMinimalControlsSegment,
+  .gstMinimalControlItem,
+  .gstMinimalRadioGroup {
+    width: 100%;
+  }
+
+  .gstMinimalControlsSegment,
+  .gstMinimalControlItem {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .gstMinimalControlsSegment {
+    justify-content: flex-start;
+  }
+
+  .gstMinimalRadioGroup {
+    grid-template-columns: 1fr;
+  }
+
+  .gstMinimalStepperWrap {
+    width: 100%;
+    justify-content: flex-start;
+    margin-left: 0;
+  }
+
+  .gstMinimalToleranceInput {
+    flex: 1 1 auto;
+    width: 100%;
   }
 }

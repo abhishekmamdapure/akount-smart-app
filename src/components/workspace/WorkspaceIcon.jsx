@@ -96,6 +96,13 @@ export default function WorkspaceIcon({ name, size = 20, className = '' }) {
           <path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V20a2 2 0 1 1-4 0v-.2a1 1 0 0 0-.7-.9 1 1 0 0 0-1.1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H4a2 2 0 1 1 0-4h.2a1 1 0 0 0 .9-.7 1 1 0 0 0-.2-1.1l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1 1 0 0 0 1.1.2h.1a1 1 0 0 0 .6-.9V4a2 2 0 1 1 4 0v.2a1 1 0 0 0 .7.9 1 1 0 0 0 1.1-.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1 1 0 0 0-.2 1.1v.1a1 1 0 0 0 .9.6H20a2 2 0 1 1 0 4h-.2a1 1 0 0 0-.9.7Z" />
         </Svg>
       )
+    case 'account':
+      return (
+        <Svg className={className} size={size}>
+          <circle cx="12" cy="8.2" r="3.2" />
+          <path d="M5.5 18.2a6.5 6.5 0 0 1 13 0" />
+        </Svg>
+      )
     case 'help':
       return (
         <Svg className={className} size={size}>
@@ -244,6 +251,14 @@ export default function WorkspaceIcon({ name, size = 20, className = '' }) {
           <path d="m14 4 4 3-4 3" />
           <path d="M17 17H6" />
           <path d="m10 14-4 3 4 3" />
+        </Svg>
+      )
+    case 'logout':
+      return (
+        <Svg className={className} size={size}>
+          <path d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3" />
+          <path d="M16 17l5-5-5-5" />
+          <path d="M21 12H9" />
         </Svg>
       )
     case 'calendar':

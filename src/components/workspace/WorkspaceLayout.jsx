@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabase'
 import { TEST_CRM_USER, USE_TEST_CRM_USER } from '../../../shared/clientCrmFixtures.js'
 import ClientModal from './ClientModal'
@@ -57,18 +57,52 @@ function SidebarLink({ item, onClick }) {
 
 export default function WorkspaceLayout() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const profileMenuRef = useRef(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [clientModalOpen, setClientModalOpen] = useState(false)
   const [clientModalMode, setClientModalMode] = useState('create')
-  const [selectedClient, setSelectedClient] = useState(null)
+  const [clientModalTarget, setClientModalTarget] = useState(null)
   const [clientRefreshKey, setClientRefreshKey] = useState(0)
+  const [activeToolClientId, setActiveToolClientId] = useState('')
   const [currentUser, setCurrentUser] = useState(USE_TEST_CRM_USER ? TEST_CRM_USER : null)
   const [authReady, setAuthReady] = useState(USE_TEST_CRM_USER)
+  const [isSigningOut, setIsSigningOut] = useState(false)
   const [userProfile, setUserProfile] = useState(null)
 
   useEffect(() => {
     setMenuOpen(false)
+    setProfileMenuOpen(false)
   }, [location.pathname])
+
+  useEffect(() => {
+    if (!profileMenuOpen) {
+      return undefined
+    }
+
+    function handlePointerDown(event) {
+      if (!profileMenuRef.current?.contains(event.target)) {
+        setProfileMenuOpen(false)
+      }
+    }
+
+    function handleEscape(event) {
+      if (event.key === 'Escape') {
+        setProfileMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDown)
+    document.addEventListener('touchstart', handlePointerDown)
+    document.addEventListener('keydown', handleEscape)
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+      document.removeEventListener('touchstart', handlePointerDown)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [profileMenuOpen])
 
   useEffect(() => {
     if (USE_TEST_CRM_USER) {
@@ -136,14 +170,6 @@ export default function WorkspaceLayout() {
 
   const profileName = `${userProfile?.profile?.firstName || ''} ${userProfile?.profile?.lastName || ''}`.trim()
   const displayName = profileName || currentUser?.user_metadata?.full_name || currentUser?.email || workspaceUser.name
-  const displayRole =
-    userProfile?.owner?.uniqueId
-      ? `UID: ${userProfile.owner.uniqueId}`
-      : USE_TEST_CRM_USER
-        ? 'Hardcoded test user'
-        : currentUser?.email
-          ? 'Supabase user'
-          : workspaceUser.role
 
   const avatarText = buildInitials(
     userProfile?.profile?.firstName,
@@ -153,27 +179,64 @@ export default function WorkspaceLayout() {
 
   function openClientModal() {
     setClientModalMode('create')
-    setSelectedClient(null)
+    setClientModalTarget(null)
     setClientModalOpen(true)
   }
 
   function openEditClientModal(client) {
     setClientModalMode('edit')
-    setSelectedClient(client)
+    setClientModalTarget(client)
     setClientModalOpen(true)
   }
 
   function closeClientModal() {
     setClientModalOpen(false)
-    setSelectedClient(null)
+    setClientModalTarget(null)
     setClientModalMode('create')
   }
 
   function handleClientSaved() {
     setClientModalOpen(false)
-    setSelectedClient(null)
+    setClientModalTarget(null)
     setClientModalMode('create')
     setClientRefreshKey((current) => current + 1)
+  }
+
+  async function handleLogout() {
+    if (isSigningOut) {
+      return
+    }
+
+    setIsSigningOut(true)
+
+    try {
+      if (!USE_TEST_CRM_USER) {
+        const { error } = await supabase.auth.signOut()
+
+        if (error) {
+          throw error
+        }
+      }
+
+      setActiveToolClientId('')
+      setCurrentUser(null)
+      setUserProfile(null)
+      navigate('/login', { replace: true })
+    } catch (error) {
+      console.error('Unable to sign out:', error)
+    } finally {
+      setIsSigningOut(false)
+    }
+  }
+
+  function handleAccountClick() {
+    setProfileMenuOpen(false)
+    navigate('/dashboard/settings')
+  }
+
+  async function handleProfileLogoutClick() {
+    setProfileMenuOpen(false)
+    await handleLogout()
   }
 
   return (
@@ -218,22 +281,6 @@ export default function WorkspaceLayout() {
                 <SidebarLink item={item} key={`utility-${item.label}-${item.to}`} onClick={() => setMenuOpen(false)} />
               ))}
             </div>
-
-            <NavLink
-              className={({ isActive }) => joinClasses(styles.userCard, styles.userCardLink, isActive && styles.userCardActive)}
-              onClick={() => setMenuOpen(false)}
-              to="/dashboard/settings"
-            >
-              {userProfile?.profile?.photoUrl ? (
-                <img alt="Profile" className={styles.userAvatarImage} src={userProfile.profile.photoUrl} />
-              ) : (
-                <div className={styles.userAvatar}>{avatarText}</div>
-              )}
-              <div>
-                <div className={styles.userName}>{displayName}</div>
-                <div className={styles.userRole}>{displayRole}</div>
-              </div>
-            </NavLink>
           </div>
         </div>
       </aside>
@@ -255,18 +302,61 @@ export default function WorkspaceLayout() {
             <button aria-label="Notifications" className={styles.utilityButton} type="button">
               <WorkspaceIcon name="bell" size={18} />
             </button>
+            <span aria-hidden="true" className={styles.topbarDivider} />
+            <div className={styles.profileMenu} ref={profileMenuRef}>
+              <button
+                aria-expanded={profileMenuOpen}
+                aria-haspopup="menu"
+                aria-label="Open account menu"
+                className={styles.profileTrigger}
+                onClick={() => setProfileMenuOpen((open) => !open)}
+                type="button"
+              >
+                {userProfile?.profile?.photoUrl ? (
+                  <img alt={`${displayName} profile`} className={styles.profileTriggerImage} src={userProfile.profile.photoUrl} />
+                ) : (
+                  <span aria-hidden="true" className={styles.profileTriggerAvatar}>{avatarText}</span>
+                )}
+                <WorkspaceIcon
+                  className={joinClasses(styles.profileChevron, profileMenuOpen && styles.profileChevronOpen)}
+                  name="chevronDown"
+                  size={14}
+                />
+              </button>
+
+              {profileMenuOpen ? (
+                <div className={styles.profileDropdown} role="menu">
+                  <button className={styles.profileMenuItem} onClick={handleAccountClick} role="menuitem" type="button">
+                    <WorkspaceIcon name="account" size={16} />
+                    <span>Account</span>
+                  </button>
+                  <button
+                    className={styles.profileMenuItem}
+                    disabled={isSigningOut}
+                    onClick={handleProfileLogoutClick}
+                    role="menuitem"
+                    type="button"
+                  >
+                    <WorkspaceIcon name="logout" size={16} />
+                    <span>{isSigningOut ? 'Logging out...' : 'Logout'}</span>
+                  </button>
+                </div>
+              ) : null}
+            </div>
           </div>
         </header>
 
         <main className={styles.main}>
           <Outlet
             context={{
+              activeToolClientId,
               authReady,
               clientRefreshKey,
               currentUser,
               openClientModal,
               openEditClientModal,
               refreshUserProfile: loadUserProfile,
+              setActiveToolClientId,
               userProfile,
             }}
           />
@@ -290,7 +380,7 @@ export default function WorkspaceLayout() {
       </nav>
 
       <ClientModal
-        client={selectedClient}
+        client={clientModalTarget}
         currentUser={currentUser}
         mode={clientModalMode}
         onClose={closeClientModal}

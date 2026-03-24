@@ -1,27 +1,36 @@
 import express from 'express'
-import mongoose from 'mongoose'
 import { readFileSync } from 'fs'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import { connectDB } from './lib/mongodb.js'
+import { handleGstReconciliationRequest } from './lib/handlers/gstReconciliation.js'
+import { handleInvoiceProcessingRequest } from './lib/handlers/invoiceProcessing.js'
+import { handleTallyXmlConversionRequest } from './lib/handlers/tallyXmlConversion.js'
+import { handlePdfToolsUsageRequest } from './lib/handlers/pdfToolsUsage.js'
 import {
   CLIENT_CRM_COLLECTION,
-  ClientWorkspace,
   normalizeClientPayload,
   normalizeOwnerPayload,
-  serializeClient,
-  serializeWorkspaceClients,
   validateClientPayload,
   validateOwnerPayload,
 } from './lib/models/client.js'
 import { USER_COLLECTION } from './lib/models/user.js'
+import {
+  createClientForOwner,
+  deleteClientForOwner,
+  getWorkspaceClientsForOwner,
+  updateClientForOwner,
+} from './lib/services/clientWorkspace.js'
 import { getOrCreateUserSettings, updateUserSettings } from './lib/services/userSettings.js'
+import { createWaitlistEntry, validateWaitlistEmail } from './lib/services/waitlist.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
+
 try {
   const envFile = readFileSync(join(__dirname, '.env.local'), 'utf-8')
   envFile.split('\n').forEach((line) => {
     const [key, ...val] = line.split('=')
+
     if (key && !key.startsWith('#')) {
       process.env[key.trim()] = val.join('=').trim()
     }
@@ -33,13 +42,6 @@ try {
 const app = express()
 app.use(express.json())
 
-const WaitlistSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-  joinedAt: { type: Date, default: Date.now },
-  emailSent: { type: String, enum: ['true', 'false'], default: 'false' },
-})
-const Waitlist = mongoose.models.Waitlist || mongoose.model('Waitlist', WaitlistSchema)
-
 function getOwnerFromHeaders(headers) {
   return normalizeOwnerPayload({
     userId: headers['x-user-id'],
@@ -47,53 +49,8 @@ function getOwnerFromHeaders(headers) {
   })
 }
 
-function touchWorkspaceOwner(workspace, owner) {
-  workspace.owner.email = owner.email
-  workspace.owner.lastSeenAt = new Date()
-}
-
 function getClientIdFromRequest(req) {
   return String(req.body?.clientId ?? req.query?.clientId ?? '').trim()
-}
-
-function hasDuplicateGst(workspace, gst, excludeClientId = '') {
-  if (!gst) {
-    return false
-  }
-
-  return workspace.clients.some(
-    (client) => client.gst && client.gst === gst && String(client._id) !== String(excludeClientId),
-  )
-}
-
-async function sendWaitlistEmail(email) {
-  const baseUrl = process.env.WAITLIST_EMAIL_API_BASE_URL
-  if (!baseUrl) {
-    console.warn('WAITLIST_EMAIL_API_BASE_URL is not set; skipping waitlist email sending.')
-    return false
-  }
-
-  try {
-    const response = await fetch(`${baseUrl}/api/misc/send-waitlist-email`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        accept: 'application/json',
-      },
-      body: JSON.stringify({ email }),
-    })
-
-    if (!response.ok) {
-      console.error(`Waitlist email API failed with status ${response.status}`)
-      return false
-    }
-
-    const emailResult = await response.json()
-    return emailResult?.status === 'sent'
-  } catch (error) {
-    console.error('Failed to call waitlist email API:', error)
-    return false
-  }
 }
 
 async function startServer() {
@@ -103,6 +60,7 @@ async function startServer() {
   }
 
   console.log('Connecting to MongoDB...')
+
   try {
     await connectDB()
     console.log('MongoDB connected successfully')
@@ -113,21 +71,14 @@ async function startServer() {
   }
 
   app.post('/api/waitlist', async (req, res) => {
-    const { email } = req.body
+    const { email } = req.body || {}
 
-    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+    if (!email || !validateWaitlistEmail(email)) {
       return res.status(400).json({ error: 'Please enter a valid email address.' })
     }
 
     try {
-      const entry = new Waitlist({ email: email.trim().toLowerCase() })
-      await entry.save()
-
-      const isEmailSent = await sendWaitlistEmail(entry.email)
-      if (isEmailSent) {
-        entry.emailSent = 'true'
-        await entry.save()
-      }
+      const entry = await createWaitlistEntry(email)
 
       return res.status(201).json({
         success: true,
@@ -135,7 +86,7 @@ async function startServer() {
         emailSent: entry.emailSent,
       })
     } catch (error) {
-      if (error.code === 11000) {
+      if (error?.code === 11000) {
         return res.status(409).json({ error: 'This email is already on the waitlist!' })
       }
 
@@ -153,8 +104,7 @@ async function startServer() {
     }
 
     try {
-      const workspace = await ClientWorkspace.findOne({ 'owner.userId': owner.userId })
-      const clients = serializeWorkspaceClients(workspace)
+      const clients = await getWorkspaceClientsForOwner(owner.userId)
 
       return res.status(200).json({ clients, collection: CLIENT_CRM_COLLECTION })
     } catch (error) {
@@ -179,42 +129,25 @@ async function startServer() {
     }
 
     try {
-      let workspace = await ClientWorkspace.findOne({ 'owner.userId': owner.userId })
+      const result = await createClientForOwner(owner, payload)
 
-      if (!workspace) {
-        workspace = new ClientWorkspace({
-          owner: {
-            userId: owner.userId,
-            email: owner.email,
-            lastSeenAt: new Date(),
-          },
-          clients: [],
-        })
-      } else {
-        touchWorkspaceOwner(workspace, owner)
+      if (result.conflict) {
+        return res.status(409).json({ error: result.conflict, collection: CLIENT_CRM_COLLECTION })
       }
 
-      if (hasDuplicateGst(workspace, payload.gst)) {
-        return res.status(409).json({
-          error: 'A client with this GST number already exists for this user.',
-          collection: CLIENT_CRM_COLLECTION,
-        })
+      if (result.error) {
+        return res.status(500).json({ error: result.error, collection: CLIENT_CRM_COLLECTION })
       }
-
-      workspace.clients.unshift(payload)
-      await workspace.save()
-
-      const createdClient = workspace.clients[0]
 
       console.info('[clients:create]', {
         collection: CLIENT_CRM_COLLECTION,
         ownerUserId: owner.userId,
-        clientId: String(createdClient._id),
-        clientName: createdClient.name,
+        clientId: result.client.id,
+        clientName: result.client.name,
       })
 
       return res.status(201).json({
-        client: serializeClient(createdClient),
+        client: result.client,
         collection: CLIENT_CRM_COLLECTION,
       })
     } catch (error) {
@@ -244,38 +177,25 @@ async function startServer() {
     }
 
     try {
-      const workspace = await ClientWorkspace.findOne({ 'owner.userId': owner.userId })
+      const result = await updateClientForOwner(owner, clientId, payload)
 
-      if (!workspace) {
-        return res.status(404).json({ error: 'Client workspace not found.', collection: CLIENT_CRM_COLLECTION })
+      if (result.conflict) {
+        return res.status(409).json({ error: result.conflict, collection: CLIENT_CRM_COLLECTION })
       }
 
-      const existingClient = workspace.clients.id(clientId)
-
-      if (!existingClient) {
-        return res.status(404).json({ error: 'Client not found.', collection: CLIENT_CRM_COLLECTION })
+      if (result.notFound) {
+        return res.status(404).json({ error: result.notFound, collection: CLIENT_CRM_COLLECTION })
       }
-
-      if (hasDuplicateGst(workspace, payload.gst, clientId)) {
-        return res.status(409).json({
-          error: 'A client with this GST number already exists for this user.',
-          collection: CLIENT_CRM_COLLECTION,
-        })
-      }
-
-      touchWorkspaceOwner(workspace, owner)
-      Object.assign(existingClient, payload)
-      await workspace.save()
 
       console.info('[clients:update]', {
         collection: CLIENT_CRM_COLLECTION,
         ownerUserId: owner.userId,
-        clientId: String(existingClient._id),
-        clientName: existingClient.name,
+        clientId: result.client.id,
+        clientName: result.client.name,
       })
 
       return res.status(200).json({
-        client: serializeClient(existingClient),
+        client: result.client,
         collection: CLIENT_CRM_COLLECTION,
       })
     } catch (error) {
@@ -299,34 +219,21 @@ async function startServer() {
     }
 
     try {
-      const workspace = await ClientWorkspace.findOne({ 'owner.userId': owner.userId })
+      const result = await deleteClientForOwner(owner, clientId)
 
-      if (!workspace) {
-        return res.status(404).json({ error: 'Client workspace not found.', collection: CLIENT_CRM_COLLECTION })
+      if (result.notFound) {
+        return res.status(404).json({ error: result.notFound, collection: CLIENT_CRM_COLLECTION })
       }
-
-      const existingClient = workspace.clients.id(clientId)
-
-      if (!existingClient) {
-        return res.status(404).json({ error: 'Client not found.', collection: CLIENT_CRM_COLLECTION })
-      }
-
-      const deletedClientId = String(existingClient._id)
-      const deletedClientName = existingClient.name
-
-      touchWorkspaceOwner(workspace, owner)
-      workspace.clients.pull({ _id: clientId })
-      await workspace.save()
 
       console.info('[clients:delete]', {
         collection: CLIENT_CRM_COLLECTION,
         ownerUserId: owner.userId,
-        clientId: deletedClientId,
-        clientName: deletedClientName,
+        clientId: result.deletedClientId,
+        clientName: result.deletedClientName,
       })
 
       return res.status(200).json({
-        deletedClientId,
+        deletedClientId: result.deletedClientId,
         collection: CLIENT_CRM_COLLECTION,
       })
     } catch (error) {
@@ -382,9 +289,27 @@ async function startServer() {
       return res.status(500).json({ error: 'Unable to update user settings.', collection: USER_COLLECTION })
     }
   })
+
+  app.get('/api/gst-reconciliation', (req, res) => handleGstReconciliationRequest(req, res))
+  app.post('/api/gst-reconciliation', (req, res) => handleGstReconciliationRequest(req, res))
+  app.put('/api/gst-reconciliation', (req, res) => handleGstReconciliationRequest(req, res))
+  app.get('/api/invoice-processing', (req, res) => handleInvoiceProcessingRequest(req, res))
+  app.post('/api/invoice-processing', (req, res) => handleInvoiceProcessingRequest(req, res))
+  app.put('/api/invoice-processing', (req, res) => handleInvoiceProcessingRequest(req, res))
+  app.get('/api/tally-xml', (req, res) => handleTallyXmlConversionRequest(req, res))
+  app.post('/api/tally-xml', (req, res) => handleTallyXmlConversionRequest(req, res))
+  app.put('/api/tally-xml', (req, res) => handleTallyXmlConversionRequest(req, res))
+  app.get('/api/pdf-tools-usage', (req, res) => handlePdfToolsUsageRequest(req, res))
+  app.post('/api/pdf-tools-usage', (req, res) => handlePdfToolsUsageRequest(req, res))
+
   app.listen(3001, () => {
     console.log('API server running at http://localhost:3001')
   })
 }
 
 startServer()
+
+
+
+
+

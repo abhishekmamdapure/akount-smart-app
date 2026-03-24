@@ -1,43 +1,107 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import WorkspaceIcon from '../../WorkspaceIcon'
 import workspaceStyles from '../../Workspace.module.css'
-import ToolClientPanel from '../shared/ToolClientPanel'
+import ClientSelectionDropdown from '../shared/ClientSelectionDropdown'
 import styles from '../shared/Tools.module.css'
-import { useToolClients } from '../shared/toolClientState'
-import { processInvoiceFile } from './invoiceProcessingService'
+import { useWorkspaceToolClient } from '../shared/toolClientState'
+import {
+  createInvoiceHistoryEntry,
+  fetchInvoiceHistory,
+  markInvoiceHistoryCompleted,
+  markInvoiceHistoryFailed,
+  processInvoiceFile,
+  uploadInvoiceSourceFile,
+} from './invoiceProcessingService'
 
 function joinClasses(...values) {
   return values.filter(Boolean).join(' ')
 }
 
-function formatFileSize(sizeInBytes) {
-  if (!sizeInBytes) {
-    return '0 KB'
-  }
-
-  const sizeInMb = sizeInBytes / (1024 * 1024)
-  if (sizeInMb >= 1) {
-    return `${sizeInMb.toFixed(1)} MB`
-  }
-
-  return `${Math.max(1, Math.round(sizeInBytes / 1024))} KB`
+function formatModeLabel(mode) {
+  return mode === 'combined' ? 'Combined' : 'Separate'
 }
 
-function formatSearchableText(client) {
-  return [client.name, client.tradeName, client.gst, client.pan, client.email]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase()
+function formatDateLabel(value) {
+  const parsedDate = value ? new Date(value) : new Date()
+
+  return new Intl.DateTimeFormat('en-US', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(parsedDate)
 }
 
-function getStatusTone(result, processError, file, selectedClient) {
+function formatProcessingTime(value) {
+  if (value === null || value === undefined || value === '') {
+    return '-'
+  }
+
+  const numericValue = Number(value)
+
+  if (!Number.isFinite(numericValue) || numericValue <= 0) {
+    return '-'
+  }
+
+  return `${numericValue.toFixed(2)} s`
+}
+
+function buildOptimisticHistoryEntry({ clientName, fileName, mode }) {
+  return {
+    clientName,
+    createdAt: new Date().toISOString(),
+    downloadHref: '',
+    errorMessage: '',
+    fileName,
+    id: `optimistic-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    mode,
+    processingTimeSec: null,
+    sourceDownloadHref: '',
+    status: 'processing',
+  }
+}
+
+function replaceHistoryEntry(current, targetIds, nextEntry) {
+  const targetIdSet = new Set(targetIds.filter(Boolean).map((value) => String(value)))
+  const nextId = String(nextEntry.id)
+  const remainingItems = current.filter(
+    (item) => !targetIdSet.has(String(item.id)) && String(item.id) !== nextId,
+  )
+
+  return [nextEntry, ...remainingItems]
+}
+
+function buildFailedHistoryEntry(entry, errorMessage) {
+  return {
+    ...entry,
+    errorMessage,
+    status: 'failed',
+  }
+}
+
+function formatHistoryStatusLabel(status) {
+  if (status === 'completed') {
+    return 'Completed'
+  }
+
+  if (status === 'failed') {
+    return 'Failed'
+  }
+
+  return 'Processing'
+}
+
+function getStatusTone({ file, isProcessing, processError, result, selectedClient }) {
   if (processError) {
     return 'warning'
   }
 
+  if (isProcessing) {
+    return 'processing'
+  }
+
   if (result) {
-    return result.mode === 'connected' ? 'success' : 'warning'
+    return 'success'
   }
 
   if (file && selectedClient) {
@@ -47,51 +111,129 @@ function getStatusTone(result, processError, file, selectedClient) {
   return 'idle'
 }
 
+function getHistoryEmptyState({ historyError, historyStatus, selectedClient }) {
+  if (!selectedClient) {
+    return 'Select a client to check history for invoice runs.'
+  }
+
+  if (historyStatus === 'loading') {
+    return 'Loading invoice history...'
+  }
+
+  if (historyError) {
+    return historyError
+  }
+
+  return 'No processed invoices yet for this client.'
+}
+
 export default function InvoiceProcessingPage() {
   const outletContext = useOutletContext() ?? {}
   const authReady = outletContext.authReady ?? false
-  const clientRefreshKey = outletContext.clientRefreshKey ?? 0
   const currentUser = outletContext.currentUser ?? null
-  const openClientModal = outletContext.openClientModal ?? (() => {})
-  const userProfile = outletContext.userProfile ?? null
-
-  const { clientLookup, clients, errorMessage, reloadClients, status } = useToolClients({
-    authReady,
-    currentUser,
-    refreshKey: clientRefreshKey,
-  })
+  const openClientModal = outletContext.openClientModal ?? (() => { })
+  const {
+    clients,
+    errorMessage,
+    filteredClients,
+    handleSelectClient,
+    query,
+    reloadClients,
+    selectedClient,
+    setQuery,
+    status,
+  } = useWorkspaceToolClient(outletContext)
 
   const inputRef = useRef(null)
+  const historyRequestRef = useRef(0)
+  const selectedClientIdRef = useRef(String(selectedClient?.id || ''))
 
-  const [query, setQuery] = useState('')
-  const [selectedClientId, setSelectedClientId] = useState('')
   const [mode, setMode] = useState('separate')
   const [file, setFile] = useState(null)
+  const [history, setHistory] = useState([])
+  const [historyError, setHistoryError] = useState('')
+  const [historyStatus, setHistoryStatus] = useState('idle')
   const [isDragActive, setIsDragActive] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [processError, setProcessError] = useState('')
   const [result, setResult] = useState(null)
 
-  const filteredClients = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase()
+  useEffect(() => {
+    selectedClientIdRef.current = String(selectedClient?.id || '')
+  }, [selectedClient?.id])
 
-    if (!normalizedQuery) {
-      return clients
+  useEffect(() => {
+    if (!authReady || !currentUser?.id || !currentUser?.email) {
+      setHistory([])
+      setHistoryError('')
+      setHistoryStatus('idle')
+      return
     }
 
-    return clients.filter((client) => formatSearchableText(client).includes(normalizedQuery))
-  }, [clients, query])
+    if (!selectedClient?.id) {
+      setHistory([])
+      setHistoryError('')
+      setHistoryStatus('idle')
+      return
+    }
 
-  const selectedClient = selectedClientId ? clientLookup.get(String(selectedClientId)) || null : null
+    const requestId = historyRequestRef.current + 1
+    historyRequestRef.current = requestId
 
-  const planName = userProfile?.plan?.name || 'Basic Plan'
-  const clientLimit = userProfile?.plan?.clientLimit || 10
-  const clientsUsed = userProfile?.usage?.clientsUsed ?? clients.length
+    setHistoryStatus('loading')
+    setHistoryError('')
 
-  function handleSelectClient(clientId) {
-    setSelectedClientId(clientId)
+    fetchInvoiceHistory({
+      clientId: selectedClient.id,
+      currentUser,
+    })
+      .then((items) => {
+        if (historyRequestRef.current !== requestId) {
+          return
+        }
+
+        setHistory(items)
+        setHistoryStatus('ready')
+      })
+      .catch((error) => {
+        if (historyRequestRef.current !== requestId) {
+          return
+        }
+
+        setHistory([])
+        setHistoryError(error.message || 'Unable to load invoice history.')
+        setHistoryStatus('error')
+      })
+  }, [authReady, currentUser?.email, currentUser?.id, selectedClient?.id])
+
+  function resetCurrentRun() {
+    setFile(null)
+    setIsDragActive(false)
     setProcessError('')
     setResult(null)
+
+    if (inputRef.current) {
+      inputRef.current.value = ''
+    }
+  }
+
+  function updateVisibleHistory(targetClientId, updater) {
+    if (selectedClientIdRef.current !== String(targetClientId)) {
+      return
+    }
+
+    setHistory(updater)
+  }
+
+  function handleClientChange(clientId) {
+    const nextClientId = String(clientId)
+    const currentClientId = String(selectedClient?.id || '')
+
+    if (nextClientId !== currentClientId) {
+      resetCurrentRun()
+    }
+
+    handleSelectClient(clientId)
   }
 
   function handleFilesSelected(fileList) {
@@ -103,6 +245,7 @@ export default function InvoiceProcessingPage() {
 
     if (selectedFile.type !== 'application/pdf' && !selectedFile.name.toLowerCase().endsWith('.pdf')) {
       setProcessError('Only PDF files are supported for invoice processing.')
+      setResult(null)
       return
     }
 
@@ -132,16 +275,15 @@ export default function InvoiceProcessingPage() {
   }
 
   function handleClearFile() {
-    setFile(null)
-    setProcessError('')
-    setResult(null)
-
-    if (inputRef.current) {
-      inputRef.current.value = ''
-    }
+    resetCurrentRun()
   }
 
   async function handleProcess() {
+    if (!currentUser?.id || !currentUser?.email) {
+      setProcessError('No signed-in user was found. Please sign in again.')
+      return
+    }
+
     if (!selectedClient) {
       setProcessError('Choose a client before starting invoice processing.')
       return
@@ -152,149 +294,174 @@ export default function InvoiceProcessingPage() {
       return
     }
 
+    const activeClient = selectedClient
+    const activeFile = file
+    const activeMode = mode
+    const optimisticEntry = buildOptimisticHistoryEntry({
+      clientName: activeClient.name,
+      fileName: activeFile.name,
+      mode: activeMode,
+    })
+    let persistedEntryId = ''
+
+    historyRequestRef.current += 1
     setIsProcessing(true)
+    setHistoryError('')
+    setHistoryStatus('ready')
     setProcessError('')
     setResult(null)
+    updateVisibleHistory(activeClient.id, (current) => [optimisticEntry, ...current])
 
     try {
-      const nextResult = await processInvoiceFile({
-        file,
-        mode,
-        selectedClient,
+      const createdEntry = await createInvoiceHistoryEntry({
+        currentUser,
+        file: activeFile,
+        mode: activeMode,
+        selectedClient: activeClient,
       })
 
-      setResult(nextResult)
+      persistedEntryId = createdEntry.entry.id
+      updateVisibleHistory(activeClient.id, (current) =>
+        replaceHistoryEntry(current, [optimisticEntry.id], createdEntry.entry),
+      )
+
+      await uploadInvoiceSourceFile({
+        file: activeFile,
+        sourceUpload: createdEntry.sourceUpload,
+      })
+
+      const nextResult = await processInvoiceFile({
+        file: activeFile,
+        mode: activeMode,
+        selectedClient: activeClient,
+      })
+      const completedEntry = await markInvoiceHistoryCompleted({
+        currentUser,
+        entryId: persistedEntryId,
+        result: nextResult,
+      })
+
+      setResult({
+        ...nextResult,
+        downloadHref: completedEntry.downloadHref || nextResult.downloadHref || '',
+        processingTimeSec: completedEntry.processingTimeSec ?? nextResult.processingTimeSec ?? null,
+        sourceDownloadHref: completedEntry.sourceDownloadHref || '',
+      })
+      updateVisibleHistory(activeClient.id, (current) =>
+        replaceHistoryEntry(current, [optimisticEntry.id, persistedEntryId], completedEntry),
+      )
     } catch (error) {
-      setProcessError(error.message || 'Unable to process the invoice PDF.')
+      const message = error.message || 'Unable to process the invoice PDF.'
+
+      setProcessError(message)
+
+      if (persistedEntryId) {
+        try {
+          const failedEntry = await markInvoiceHistoryFailed({
+            currentUser,
+            entryId: persistedEntryId,
+            errorMessage: message,
+          })
+
+          updateVisibleHistory(activeClient.id, (current) =>
+            replaceHistoryEntry(current, [optimisticEntry.id, persistedEntryId], failedEntry),
+          )
+        } catch {
+          updateVisibleHistory(activeClient.id, (current) =>
+            replaceHistoryEntry(current, [optimisticEntry.id, persistedEntryId], {
+              ...buildFailedHistoryEntry(
+                current.find((item) => String(item.id) === String(persistedEntryId)) || optimisticEntry,
+                message,
+              ),
+              id: persistedEntryId,
+            }),
+          )
+        }
+      } else {
+        updateVisibleHistory(activeClient.id, (current) =>
+          replaceHistoryEntry(current, [optimisticEntry.id], buildFailedHistoryEntry(optimisticEntry, message)),
+        )
+      }
     } finally {
       setIsProcessing(false)
     }
   }
 
   const processingEnabled = Boolean(selectedClient && file && !isProcessing)
-  const statusTone = getStatusTone(result, processError, file, selectedClient)
+  const statusTone = getStatusTone({
+    file,
+    isProcessing,
+    processError,
+    result,
+    selectedClient,
+  })
   const statusTitle = processError
     ? 'Processing needs attention'
-    : result
-      ? result.mode === 'connected'
+    : isProcessing
+      ? 'Processing invoice'
+      : result
         ? 'Processing complete'
-        : 'UI ready, backend pending'
-      : processingEnabled
-        ? 'Ready to process'
-        : selectedClient
-          ? 'Choose a PDF file'
-          : 'Choose a client first'
+        : processingEnabled
+          ? 'Ready to process'
+          : selectedClient
+            ? 'No PDF attached'
+            : 'Choose a client first'
   const statusMessage = processError
     ? processError
-    : result?.message ||
+    : isProcessing
+      ? 'A processing entry has been created. The history row will stay yellow until OCR and storage finish.'
+      : result?.message ||
       (selectedClient
         ? file
-          ? 'The selected PDF is ready to be processed for the chosen client.'
-          : 'Upload an invoice PDF to continue with OCR and export preparation.'
-        : 'All invoice actions stay locked until a client is selected from the workspace list.')
+          ? `${file.name} is ready for ${formatModeLabel(mode).toLowerCase()} processing.`
+          : 'Upload a PDF to continue.'
+        : 'Select a client to enable upload and processing.')
+  const modeDescription =
+    mode === 'combined'
+      ? 'All extracted line items are merged into one combined entry for summary-level bookkeeping.'
+      : 'Each extracted line item stays on its own row for granular review before export.'
+  const historyEmptyState = getHistoryEmptyState({
+    historyError,
+    historyStatus,
+    selectedClient,
+  })
 
   return (
-    <div className={joinClasses(workspaceStyles.page, styles.toolPage)}>
-      <section className={workspaceStyles.pageIntro}>
-        <div>
-          <p className={workspaceStyles.eyebrow}>Accounting tool</p>
-          <h1 className={workspaceStyles.pageTitle}>Invoice Processing</h1>
-          <p className={workspaceStyles.pageText}>
-            The first step is always client selection. Once the entity is locked, the team can upload invoice PDFs, choose a processing mode, and push the document into the OCR-to-Excel workflow.
-          </p>
+    <div className={joinClasses(workspaceStyles.page, styles.toolPage, styles.invoicePage)}>
+      <section className={styles.invoiceTopbar}>
+        <div className={styles.invoiceTopbarLeft}>
+          <h1 className={styles.invoicePageTitle}>Invoice Processing</h1>
         </div>
 
-        <div className={styles.heroStats}>
-          <article className={styles.heroStat}>
-            <span className={styles.heroStatLabel}>Client required</span>
-            <strong>{selectedClient ? selectedClient.name : 'Not selected'}</strong>
-            <span>Every invoice run stays attached to one client entity.</span>
-          </article>
-          <article className={styles.heroStat}>
-            <span className={styles.heroStatLabel}>Processing mode</span>
-            <strong>{mode === 'combined' ? 'Combined' : 'Separate'}</strong>
-            <span>Switch how line items should be grouped before export.</span>
-          </article>
-          <article className={styles.heroStat}>
-            <span className={styles.heroStatLabel}>File status</span>
-            <strong>{file ? file.name : 'No PDF attached'}</strong>
-            <span>{file ? `${formatFileSize(file.size)} ready for upload` : 'Supports invoice PDFs only'}</span>
-          </article>
+        <div className={styles.invoiceClientSlot}>
+          <ClientSelectionDropdown
+            clients={clients}
+            errorMessage={errorMessage}
+            filteredClients={filteredClients}
+            menuAlign="end"
+            onCreateClient={openClientModal}
+            onQueryChange={setQuery}
+            onRetry={reloadClients}
+            onSelectClient={handleClientChange}
+            query={query}
+            selectedClient={selectedClient}
+            status={status}
+            variant="badge"
+          />
         </div>
       </section>
 
-      <ToolClientPanel
-        clients={clients}
-        clientsUsed={clientsUsed}
-        clientLimit={clientLimit}
-        errorMessage={errorMessage}
-        filteredClients={filteredClients}
-        onCreateClient={openClientModal}
-        onQueryChange={setQuery}
-        onRetry={reloadClients}
-        onSelectClient={handleSelectClient}
-        planName={planName}
-        query={query}
-        selectedClient={selectedClient}
-        status={status}
-      />
-
-      <section className={styles.toolGrid}>
-        <div className={styles.toolMain}>
-          <article className={styles.uploadCard}>
-            <div className={styles.uploadHeader}>
-              <div className={styles.uploadCardHeader}>
-                <p className={workspaceStyles.eyebrow}>Step 1</p>
-                <h2>Prepare the invoice file</h2>
-                <p className={styles.uploadHint}>
-                  Keep the current app color and typography system, but move the invoice workflow into a clearer two-step flow: select client first, then upload and process.
-                </p>
-              </div>
-
-              <span className={styles.uploadIcon}>
-                <WorkspaceIcon name="upload" size={22} />
-              </span>
-            </div>
-
-            <div className={styles.uploadMeta}>
-              <span className={styles.modeTag}>{selectedClient ? `Client: ${selectedClient.name}` : 'Client not selected'}</span>
-              <span className={joinClasses(styles.modeTag, styles.modeTagMuted)}>{file ? 'PDF attached' : 'Awaiting PDF'}</span>
-            </div>
-
-            <div className={styles.modeGrid}>
-              <button
-                className={joinClasses(styles.modeButton, mode === 'combined' && styles.modeButtonActive)}
-                onClick={() => setMode('combined')}
-                type="button"
-              >
-                <div className={styles.modeChoice}>
-                  <WorkspaceIcon name="spark" size={18} />
-                  <span className={styles.modeTag}>Combined</span>
-                </div>
-                <h3>Merge line items into one export-ready entry</h3>
-                <p>Use this when multiple particulars should be grouped into a single row for the same seller and GSTIN.</p>
-              </button>
-
-              <button
-                className={joinClasses(styles.modeButton, mode === 'separate' && styles.modeButtonActive)}
-                onClick={() => setMode('separate')}
-                type="button"
-              >
-                <div className={styles.modeChoice}>
-                  <WorkspaceIcon name="switch" size={18} />
-                  <span className={styles.modeTag}>Separate</span>
-                </div>
-                <h3>Keep each extracted particular in its own line</h3>
-                <p>Use this when reviewers need a more granular export before posting into downstream accounting tools.</p>
-              </button>
-            </div>
-
+      <article className={styles.invoiceMainCard}>
+        <div className={styles.invoiceCardTop}>
+          <section className={styles.invoiceUploadZone}>
+            <span className={styles.invoiceSectionLabel}>Invoice file</span>
             <div
               className={joinClasses(
-                styles.dropzone,
-                isDragActive && styles.dropzoneActive,
-                !selectedClient && styles.dropzoneDisabled,
+                styles.invoiceUploadArea,
+                isDragActive && styles.invoiceUploadAreaActive,
+                !selectedClient && styles.invoiceUploadAreaDisabled,
               )}
+              onClick={handleBrowseClick}
               onDragEnter={(event) => {
                 event.preventDefault()
                 if (selectedClient && !isProcessing) {
@@ -309,19 +476,20 @@ export default function InvoiceProcessingPage() {
               onDrop={handleDrop}
               role="presentation"
             >
-              <span className={styles.summaryCardIcon}>
-                <WorkspaceIcon name="invoice" size={24} />
+              <span className={styles.invoiceUploadIcon}>
+                <WorkspaceIcon name="upload" size={18} />
               </span>
-              <strong>{file ? file.name : 'Drag and drop invoice PDF here'}</strong>
+              <h2>{file ? file.name : 'Drag and drop invoice PDF'}</h2>
               <p>
                 {selectedClient
-                  ? 'Upload the invoice document for the selected client. Once the processing API is configured, this screen can post the file directly into the OCR workflow.'
-                  : 'Client selection comes first. Pick a client above to unlock drag-and-drop and browse actions.'}
+                  ? file
+                    ? 'Use Browse PDF to replace the current file or process this one now.'
+                    : 'Or browse to choose a file for the selected client.'
+                  : 'Select a client first to unlock upload.'}
               </p>
-              <div className={styles.dropzoneMeta}>
-                <span>PDF only</span>
-                <span>Best for scanned invoices and vendor PDFs</span>
-                <span>Client-linked run</span>
+              <div className={styles.invoiceUploadTags}>
+                <span className={styles.invoiceTag}>PDF only</span>
+                <span className={styles.invoiceTag}>Scanned supported</span>
               </div>
               <input
                 accept=".pdf,application/pdf"
@@ -331,245 +499,154 @@ export default function InvoiceProcessingPage() {
                 type="file"
               />
             </div>
+          </section>
 
-            {file ? (
-              <div className={styles.selectedFileCard}>
-                <strong>{file.name}</strong>
-                <p className={styles.uploadHint}>
-                  Ready to process for {selectedClient?.name || 'the selected client'} in {mode} mode.
-                </p>
-                <div className={styles.selectedFileMeta}>
-                  <span>{formatFileSize(file.size)}</span>
-                  <span>{file.type || 'application/pdf'}</span>
-                  <span>{mode === 'combined' ? 'Combined export' : 'Separate export'}</span>
-                </div>
+          <aside className={styles.invoiceControlsPanel}>
+            <div>
+              <span className={styles.invoiceSectionLabel}>Processing mode</span>
+              <div className={styles.invoiceModeToggle}>
+                <button
+                  className={joinClasses(
+                    styles.invoiceModeButton,
+                    mode === 'separate' && styles.invoiceModeButtonActive,
+                  )}
+                  onClick={() => setMode('separate')}
+                  type="button"
+                >
+                  Separate
+                </button>
+                <button
+                  className={joinClasses(
+                    styles.invoiceModeButton,
+                    mode === 'combined' && styles.invoiceModeButtonActive,
+                  )}
+                  onClick={() => setMode('combined')}
+                  type="button"
+                >
+                  Combined
+                </button>
               </div>
-            ) : null}
-
-            <div className={styles.uploadActions}>
-              <button
-                className={joinClasses(styles.uploadAction, styles.uploadActionSecondary)}
-                disabled={!selectedClient || isProcessing}
-                onClick={handleBrowseClick}
-                type="button"
-              >
-                <WorkspaceIcon name="upload" size={16} />
-                <span>Browse PDF</span>
-              </button>
-              <button className={styles.uploadAction} disabled={!processingEnabled} onClick={handleProcess} type="button">
-                <WorkspaceIcon name="spark" size={16} />
-                <span>{isProcessing ? 'Processing...' : 'Process Invoice'}</span>
-              </button>
-              <button
-                className={joinClasses(styles.uploadAction, styles.uploadActionSecondary)}
-                disabled={!file || isProcessing}
-                onClick={handleClearFile}
-                type="button"
-              >
-                <WorkspaceIcon name="close" size={16} />
-                <span>Clear File</span>
-              </button>
+              <p className={styles.invoiceModeDescription}>{modeDescription}</p>
             </div>
 
-            <div
-              className={joinClasses(
-                styles.statusRow,
-                statusTone === 'success' && styles.statusRowSuccess,
-                statusTone === 'warning' && styles.statusRowWarning,
-              )}
-            >
-              <div className={styles.statusTextWrap}>
+            <div>
+              <span className={styles.invoiceSectionLabel}>File status</span>
+              <div className={styles.invoiceStatusRow}>
                 <span
                   className={joinClasses(
-                    styles.statusIndicator,
-                    statusTone === 'ready' && styles.statusIndicatorReady,
-                    statusTone === 'success' && styles.statusIndicatorSuccess,
+                    styles.invoiceStatusDot,
+                    statusTone === 'processing' && styles.invoiceStatusDotProcessing,
+                    statusTone === 'success' && styles.invoiceStatusDotSuccess,
+                    statusTone === 'warning' && styles.invoiceStatusDotWarning,
+                    statusTone === 'ready' && styles.invoiceStatusDotReady,
                   )}
                 />
-                <div>
+                <div className={styles.invoiceStatusCopy}>
                   <strong>{statusTitle}</strong>
-                  <p className={styles.statusMessage}>{statusMessage}</p>
+                  <span>{statusMessage}</span>
                 </div>
               </div>
             </div>
-          </article>
 
-          <article className={styles.resultCard}>
-            <div className={styles.resultHeader}>
-              <div>
-                <p className={workspaceStyles.eyebrow}>Step 2</p>
-                <h2>Review the run outcome</h2>
-                <p className={styles.resultMeta}>
-                  This section stays stable after each run so the user can verify client context, processing mode, and output readiness without hunting through the page.
-                </p>
-              </div>
-              <span className={styles.resultTag}>{result ? 'Latest run' : 'Awaiting first run'}</span>
+            <div className={styles.invoiceButtonStack}>
+              <button className={styles.invoicePrimaryButton} disabled={!processingEnabled} onClick={handleProcess} type="button">
+                <WorkspaceIcon name="spark" size={16} />
+                <span>{isProcessing ? 'Processing...' : 'Process invoice'}</span>
+              </button>
+              {file ? (
+                <button
+                  className={styles.invoiceSecondaryButton}
+                  disabled={isProcessing}
+                  onClick={handleClearFile}
+                  type="button"
+                >
+                  Clear file
+                </button>
+              ) : null}
             </div>
-
-            {result ? (
-              <>
-                <div className={styles.resultList}>
-                  <div className={styles.resultItem}>
-                    <div>
-                      <span className={styles.resultLabel}>Client</span>
-                      <strong className={styles.resultValue}>{result.clientName}</strong>
-                    </div>
-                    <span className={styles.modeTag}>{mode === 'combined' ? 'Combined' : 'Separate'}</span>
-                  </div>
-                  <div className={styles.resultItem}>
-                    <div>
-                      <span className={styles.resultLabel}>File</span>
-                      <strong className={styles.resultValue}>{result.fileName}</strong>
-                    </div>
-                    <span className={styles.modeTag}>{result.pages ? `${result.pages} pages` : 'Pages pending'}</span>
-                  </div>
-                  <div className={styles.resultItem}>
-                    <div>
-                      <span className={styles.resultLabel}>Run mode</span>
-                      <strong className={styles.resultValue}>{result.mode === 'connected' ? 'Connected API run' : 'Preview-only UI run'}</strong>
-                    </div>
-                    <span className={styles.modeTag}>{result.fileId || 'No file id yet'}</span>
-                  </div>
-                </div>
-
-                <div className={styles.resultFooter}>
-                  <p className={styles.resultMeta}>{result.message}</p>
-                  <div className={styles.resultActions}>
-                    {result.downloadHref ? (
-                      <a className={styles.resultAction} href={result.downloadHref} rel="noreferrer" target="_blank">
-                        <WorkspaceIcon name="download" size={16} />
-                        <span>Download Excel</span>
-                      </a>
-                    ) : null}
-                    <button
-                      className={joinClasses(styles.resultAction, styles.resultActionSecondary)}
-                      onClick={handleClearFile}
-                      type="button"
-                    >
-                      <WorkspaceIcon name="close" size={16} />
-                      <span>Start New Run</span>
-                    </button>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className={styles.emptyQueue}>
-                <span className={styles.summaryCardIcon}>
-                  <WorkspaceIcon name="download" size={20} />
-                </span>
-                <h3>No run output yet</h3>
-                <p>
-                  After the first invoice-processing action, this panel will show the client-linked result, run mode, and download action in one place.
-                </p>
-              </div>
-            )}
-          </article>
+          </aside>
         </div>
 
-        <aside className={styles.toolAside}>
-          <article className={styles.helperCard}>
-            <div className={styles.helperCardHeader}>
-              <div>
-                <p className={workspaceStyles.eyebrow}>Workflow notes</p>
-                <h3 className={styles.helperCardTitle}>Why this layout works better</h3>
-              </div>
-              <span className={styles.helperCardIcon}>
-                <WorkspaceIcon name="check" size={18} />
-              </span>
-            </div>
+        <div className={styles.invoiceCardDivider} />
 
-            <div className={styles.helperCardList}>
-              <div className={styles.helperRow}>
-                <span className={styles.queueCardIcon}>
-                  <WorkspaceIcon name="clients" size={16} />
-                </span>
-                <div>
-                  <strong>Client-first access pattern</strong>
-                  <p>The tool starts with the client filter so billing context and entity context are established before any file action.</p>
-                </div>
-              </div>
-              <div className={styles.helperRow}>
-                <span className={styles.queueCardIcon}>
-                  <WorkspaceIcon name="switch" size={16} />
-                </span>
-                <div>
-                  <strong>Clear mode decision</strong>
-                  <p>Combined and separate processing are shown as distinct choices with direct explanations instead of hidden config.</p>
-                </div>
-              </div>
-              <div className={styles.helperRow}>
-                <span className={styles.queueCardIcon}>
-                  <WorkspaceIcon name="dashboard" size={16} />
-                </span>
-                <div>
-                  <strong>Stable outcome area</strong>
-                  <p>The result card always lives in the same spot, which reduces layout jumps and makes repeated use faster for operators.</p>
-                </div>
-              </div>
-            </div>
-          </article>
+        <section className={styles.invoiceHistorySection}>
+          <div className={styles.invoiceHistoryHeader}>
+            <h2>File history</h2>
+          </div>
 
-          <article className={styles.helperCard}>
-            <div className={styles.helperCardHeader}>
-              <div>
-                <p className={workspaceStyles.eyebrow}>Queue snapshot</p>
-                <h3 className={styles.helperCardTitle}>Processing checklist</h3>
-              </div>
-              <span className={styles.helperCardIcon}>
-                <WorkspaceIcon name="invoice" size={18} />
-              </span>
-            </div>
-
-            <div className={styles.queueCards}>
-              <div className={styles.queueCard}>
-                <strong>1. Client locked</strong>
-                <p>{selectedClient ? `${selectedClient.name} selected for this run.` : 'Waiting for client selection.'}</p>
-              </div>
-              <div className={styles.queueCard}>
-                <strong>2. Source PDF attached</strong>
-                <p>{file ? `${file.name} is ready for upload.` : 'Waiting for invoice PDF.'}</p>
-              </div>
-              <div className={styles.queueCard}>
-                <strong>3. API handoff</strong>
-                <p>{result?.mode === 'connected' ? 'Connected run completed.' : 'Will activate when the processing endpoint is configured.'}</p>
-              </div>
-            </div>
-          </article>
-
-          <article className={styles.guidanceCard}>
-            <div className={styles.guidanceHeader}>
-              <span className={styles.summaryCardIcon}>
-                <WorkspaceIcon name="spark" size={18} />
-              </span>
-              <div>
-                <p className={workspaceStyles.eyebrow}>Next integration</p>
-                <h2>Backend handoff</h2>
-              </div>
-            </div>
-
-            <div className={styles.guidanceList}>
-              <div className={styles.guidanceItem}>
-                <div>
-                  <strong>Environment switch</strong>
-                  <p>Set `VITE_INVOICE_PROCESS_API_BASE_URL` to connect this UI to the live invoice-processing API.</p>
-                </div>
-              </div>
-              <div className={styles.guidanceItem}>
-                <div>
-                  <strong>Client payload</strong>
-                  <p>The selected client id and name are already included in the request structure so downstream services can tag the run correctly.</p>
-                </div>
-              </div>
-              <div className={styles.guidanceItem}>
-                <div>
-                  <strong>Reuse for other tools</strong>
-                  <p>The new `tools` folder now contains the client-first scaffold that can be reused for GST reconciliation, PDF tools, and future workflows.</p>
-                </div>
-              </div>
-            </div>
-          </article>
-        </aside>
-      </section>
+          <div className={styles.invoiceHistoryTableWrap}>
+            <table className={styles.invoiceHistoryTable}>
+              <thead>
+                <tr>
+                  <th>File name</th>
+                  <th>Client</th>
+                  <th>Mode</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th>Output</th>
+                  <th>Processing time</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.length > 0 ? (
+                  history.map((item) => (
+                    <tr key={item.id}>
+                      <td>
+                        {item.downloadHref ? (
+                          <a
+                            className={styles.tallyHistoryFileLink}
+                            href={item.downloadHref}
+                            rel="noreferrer"
+                            target="_blank"
+                          >
+                            {item.fileName}
+                          </a>
+                        ) : (
+                          item.fileName
+                        )}
+                      </td>
+                      <td>{item.clientName}</td>
+                      <td>{formatModeLabel(item.mode)}</td>
+                      <td>{formatDateLabel(item.createdAt || item.updatedAt)}</td>
+                      <td>
+                        <span
+                          className={joinClasses(
+                            styles.invoiceHistoryStatus,
+                            item.status === 'processing' && styles.invoiceHistoryStatusProcessing,
+                            item.status === 'completed' && styles.invoiceHistoryStatusCompleted,
+                            item.status === 'failed' && styles.invoiceHistoryStatusFailed,
+                          )}
+                        >
+                          {item.status === 'processing' ? (
+                            <span className={styles.invoiceHistorySpinner} aria-hidden="true" />
+                          ) : null}
+                          <span>{formatHistoryStatusLabel(item.status)}</span>
+                        </span>
+                      </td>
+                      <td>
+                        {item.downloadHref ? (
+                          <a className={styles.tallyHistoryFileLink} href={item.downloadHref} rel="noreferrer" target="_blank">
+                            {item.resultFileName || 'invoice-processed.xlsx'}
+                          </a>
+                        ) : (
+                          '-'
+                        )}
+                      </td>
+                      <td>{formatProcessingTime(item.processingTimeSec)}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td className={styles.invoiceHistoryEmpty} colSpan={7}>
+                      {historyEmptyState}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </article>
     </div>
   )
 }

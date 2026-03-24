@@ -1,14 +1,17 @@
-﻿import { connectDB } from '../lib/mongodb.js'
+import { connectDB } from '../lib/mongodb.js'
 import {
   CLIENT_CRM_COLLECTION,
-  ClientWorkspace,
   normalizeClientPayload,
   normalizeOwnerPayload,
-  serializeClient,
-  serializeWorkspaceClients,
   validateClientPayload,
   validateOwnerPayload,
 } from '../lib/models/client.js'
+import {
+  createClientForOwner,
+  deleteClientForOwner,
+  getWorkspaceClientsForOwner,
+  updateClientForOwner,
+} from '../lib/services/clientWorkspace.js'
 
 function getOwnerFromRequest(req) {
   return normalizeOwnerPayload({
@@ -17,23 +20,8 @@ function getOwnerFromRequest(req) {
   })
 }
 
-function touchWorkspaceOwner(workspace, owner) {
-  workspace.owner.email = owner.email
-  workspace.owner.lastSeenAt = new Date()
-}
-
 function getClientIdFromRequest(req) {
   return String(req.body?.clientId ?? req.query?.clientId ?? '').trim()
-}
-
-function hasDuplicateGst(workspace, gst, excludeClientId = '') {
-  if (!gst) {
-    return false
-  }
-
-  return workspace.clients.some(
-    (client) => client.gst && client.gst === gst && String(client._id) !== String(excludeClientId),
-  )
 }
 
 export default async function handler(req, res) {
@@ -61,8 +49,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     try {
-      const workspace = await ClientWorkspace.findOne({ 'owner.userId': owner.userId })
-      const clients = serializeWorkspaceClients(workspace)
+      const clients = await getWorkspaceClientsForOwner(owner.userId)
 
       console.info('[clients:get]', {
         collection: CLIENT_CRM_COLLECTION,
@@ -86,42 +73,25 @@ export default async function handler(req, res) {
     }
 
     try {
-      let workspace = await ClientWorkspace.findOne({ 'owner.userId': owner.userId })
+      const result = await createClientForOwner(owner, payload)
 
-      if (!workspace) {
-        workspace = new ClientWorkspace({
-          owner: {
-            userId: owner.userId,
-            email: owner.email,
-            lastSeenAt: new Date(),
-          },
-          clients: [],
-        })
-      } else {
-        touchWorkspaceOwner(workspace, owner)
+      if (result.conflict) {
+        return res.status(409).json({ error: result.conflict, collection: CLIENT_CRM_COLLECTION })
       }
 
-      if (hasDuplicateGst(workspace, payload.gst)) {
-        return res.status(409).json({
-          error: 'A client with this GST number already exists for this user.',
-          collection: CLIENT_CRM_COLLECTION,
-        })
+      if (result.error) {
+        return res.status(500).json({ error: result.error, collection: CLIENT_CRM_COLLECTION })
       }
-
-      workspace.clients.unshift(payload)
-      await workspace.save()
-
-      const createdClient = workspace.clients[0]
 
       console.info('[clients:create]', {
         collection: CLIENT_CRM_COLLECTION,
         ownerUserId: owner.userId,
-        clientId: String(createdClient._id),
-        clientName: createdClient.name,
+        clientId: result.client.id,
+        clientName: result.client.name,
       })
 
       return res.status(201).json({
-        client: serializeClient(createdClient),
+        client: result.client,
         collection: CLIENT_CRM_COLLECTION,
       })
     } catch (error) {
@@ -144,38 +114,25 @@ export default async function handler(req, res) {
     }
 
     try {
-      const workspace = await ClientWorkspace.findOne({ 'owner.userId': owner.userId })
+      const result = await updateClientForOwner(owner, clientId, payload)
 
-      if (!workspace) {
-        return res.status(404).json({ error: 'Client workspace not found.', collection: CLIENT_CRM_COLLECTION })
+      if (result.conflict) {
+        return res.status(409).json({ error: result.conflict, collection: CLIENT_CRM_COLLECTION })
       }
 
-      const existingClient = workspace.clients.id(clientId)
-
-      if (!existingClient) {
-        return res.status(404).json({ error: 'Client not found.', collection: CLIENT_CRM_COLLECTION })
+      if (result.notFound) {
+        return res.status(404).json({ error: result.notFound, collection: CLIENT_CRM_COLLECTION })
       }
-
-      if (hasDuplicateGst(workspace, payload.gst, clientId)) {
-        return res.status(409).json({
-          error: 'A client with this GST number already exists for this user.',
-          collection: CLIENT_CRM_COLLECTION,
-        })
-      }
-
-      touchWorkspaceOwner(workspace, owner)
-      Object.assign(existingClient, payload)
-      await workspace.save()
 
       console.info('[clients:update]', {
         collection: CLIENT_CRM_COLLECTION,
         ownerUserId: owner.userId,
-        clientId: String(existingClient._id),
-        clientName: existingClient.name,
+        clientId: result.client.id,
+        clientName: result.client.name,
       })
 
       return res.status(200).json({
-        client: serializeClient(existingClient),
+        client: result.client,
         collection: CLIENT_CRM_COLLECTION,
       })
     } catch (error) {
@@ -192,34 +149,21 @@ export default async function handler(req, res) {
     }
 
     try {
-      const workspace = await ClientWorkspace.findOne({ 'owner.userId': owner.userId })
+      const result = await deleteClientForOwner(owner, clientId)
 
-      if (!workspace) {
-        return res.status(404).json({ error: 'Client workspace not found.', collection: CLIENT_CRM_COLLECTION })
+      if (result.notFound) {
+        return res.status(404).json({ error: result.notFound, collection: CLIENT_CRM_COLLECTION })
       }
-
-      const existingClient = workspace.clients.id(clientId)
-
-      if (!existingClient) {
-        return res.status(404).json({ error: 'Client not found.', collection: CLIENT_CRM_COLLECTION })
-      }
-
-      const deletedClientId = String(existingClient._id)
-      const deletedClientName = existingClient.name
-
-      touchWorkspaceOwner(workspace, owner)
-      workspace.clients.pull({ _id: clientId })
-      await workspace.save()
 
       console.info('[clients:delete]', {
         collection: CLIENT_CRM_COLLECTION,
         ownerUserId: owner.userId,
-        clientId: deletedClientId,
-        clientName: deletedClientName,
+        clientId: result.deletedClientId,
+        clientName: result.deletedClientName,
       })
 
       return res.status(200).json({
-        deletedClientId,
+        deletedClientId: result.deletedClientId,
         collection: CLIENT_CRM_COLLECTION,
       })
     } catch (error) {

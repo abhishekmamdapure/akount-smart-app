@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate, useOutletContext } from 'react-router-dom'
 import WorkspaceIcon from '../../WorkspaceIcon'
 import workspaceStyles from '../../Workspace.module.css'
-import ClientSelectionDropdown from '../shared/ClientSelectionDropdown'
 import styles from '../shared/Tools.module.css'
+import ToolClientSelector from '../shared/ToolClientSelector'
 import { useWorkspaceToolClient } from '../shared/toolClientState'
 import {
   createGstHistoryEntry,
@@ -13,6 +13,7 @@ import {
   processGstFiles,
   uploadGstSourceFiles,
 } from './gstReconciliationService'
+import { buildGstMismatchViewModel } from './gstReconciliationResultHelpers'
 
 const DEFAULT_TYPE = 'gst_2b'
 const DEFAULT_TOLERANCE = 10
@@ -26,12 +27,14 @@ const GST_TYPE_CONTENT = Object.freeze({
   gst_2b: {
     description: 'Match purchase register against GSTR-2B.',
     gstFieldLabel: 'GSTR-2B (Excel)',
+    icon: 'toolGst2b',
     optionCopy: 'Supplier ITC matching and mismatch review.',
     optionLabel: '2B',
   },
   gst_4a: {
     description: 'Match purchase register against GSTR-4A.',
     gstFieldLabel: 'GSTR-4A (Excel)',
+    icon: 'toolGst4a',
     optionCopy: 'Composition credit review and filing support.',
     optionLabel: '4A',
   },
@@ -315,6 +318,7 @@ export default function GstReconciliationPage() {
   const [historyStatus, setHistoryStatus] = useState('idle')
   const [isProcessing, setIsProcessing] = useState(false)
   const [activeDropzone, setActiveDropzone] = useState('')
+  const [activeMismatchTabId, setActiveMismatchTabId] = useState('')
 
   const activeType = getTypeFromSearch(location.search)
   const activeDraft = drafts[activeType] || buildEmptyDraft()
@@ -327,6 +331,10 @@ export default function GstReconciliationPage() {
   useEffect(() => {
     setActiveDropzone('')
   }, [activeType])
+
+  useEffect(() => {
+    setActiveMismatchTabId('')
+  }, [activeDraft.result?.downloadUrl, activeDraft.result?.fileId, activeType])
 
   useEffect(() => {
     if (!authReady || !currentUser?.id || !currentUser?.email) {
@@ -676,16 +684,27 @@ export default function GstReconciliationPage() {
           : selectedClient
             ? 'Attach both Excel files'
             : 'Choose a client first'
+  const mismatchView = buildGstMismatchViewModel(activeDraft.result, activeType)
+  const resolvedMismatchTabId = mismatchView.sections.some((section) => section.id === activeMismatchTabId)
+    ? activeMismatchTabId
+    : mismatchView.defaultTabId
+  const activeMismatchSection =
+    mismatchView.sections.find((section) => section.id === resolvedMismatchTabId) || mismatchView.sections[0] || null
+  const mismatchRowCountLabel =
+    mismatchView.totalRows === 1 ? '1 mismatched row' : `${mismatchView.totalRows} mismatched rows`
   const statusMessage = activeDraft.processError
     ? activeDraft.processError
     : isProcessing
       ? `A ${formatTypeLabel(activeType)} history entry has been created. The table row will update when matching and storage complete.`
-      : activeDraft.result?.message ||
-      (selectedClient
-        ? hasBothFiles
-          ? `${activeDraft.purchaseFile.name} and ${activeDraft.gstFile.name} are ready for ${formatTypeLabel(activeType)} reconciliation.`
-          : `Upload the purchase register and ${activeTypeContent.gstFieldLabel.toLowerCase()} to continue.`
-        : 'Select a client to enable upload and processing.')
+      : activeDraft.result
+        ? mismatchView.hasMismatchRows
+          ? `${mismatchRowCountLabel} ready for review below. Switch between Purchase Register and ${mismatchView.gstLabel} to inspect the differences.`
+          : mismatchView.successMessage
+        : selectedClient
+          ? hasBothFiles
+            ? `${activeDraft.purchaseFile.name} and ${activeDraft.gstFile.name} are ready for ${formatTypeLabel(activeType)} reconciliation.`
+            : `Upload the purchase register and ${activeTypeContent.gstFieldLabel.toLowerCase()} to continue.`
+          : 'Select a client to enable upload and processing.'
   const historyEmptyState = getHistoryEmptyState({
     historyError,
     historyStatus,
@@ -697,302 +716,378 @@ export default function GstReconciliationPage() {
       <section className={joinClasses(styles.invoiceTopbar, styles.gstMinimalHeader)}>
         <h1 className={joinClasses(styles.invoicePageTitle, styles.gstMinimalTitle)}>GST Reconciliation</h1>
 
-        <div className={joinClasses(styles.invoiceClientSlot, styles.gstMinimalClientSlot)}>
-          <ClientSelectionDropdown
-            clients={clients}
-            compact
-            errorMessage={errorMessage}
-            filteredClients={filteredClients}
-            menuAlign="end"
-            onCreateClient={openClientModal}
-            onQueryChange={setQuery}
-            onRetry={reloadClients}
-            onSelectClient={handleClientChange}
-            query={query}
-            selectedClient={selectedClient}
-            status={status}
-          />
-        </div>
+        <ToolClientSelector
+          className={styles.gstMinimalClientSlot}
+          clients={clients}
+          errorMessage={errorMessage}
+          filteredClients={filteredClients}
+          onCreateClient={openClientModal}
+          onQueryChange={setQuery}
+          onRetry={reloadClients}
+          onSelectClient={handleClientChange}
+          query={query}
+          selectedClient={selectedClient}
+          status={status}
+        />
       </section>
 
       <div className={styles.gstMinimalCanvas}>
-        <section className={styles.gstMinimalControlsCard}>
-          <div className={joinClasses(styles.invoiceSectionLabel, styles.gstMinimalSectionLabel)}>
-            Reconciliation Type & Matching Controls
-          </div>
+        <section className={styles.gstWorkbenchCard}>
+          <div className={styles.gstTabRow} role="tablist" aria-label="GST reconciliation type">
+            {Object.entries(GST_TYPE_CONTENT).map(([type, content]) => {
+              const isActive = activeType === type
 
-          <div className={styles.gstMinimalControlsRow}>
-            <div className={joinClasses(styles.gstMinimalControlsSegment, styles.gstMinimalControlsSegmentType)}>
-              <div className={styles.gstMinimalRadioGroup}>
-                {Object.entries(GST_TYPE_CONTENT).map(([type, content]) => {
-                  const isActive = activeType === type
-
-                  return (
-                    <label
-                      className={joinClasses(
-                        styles.gstMinimalRadioOption,
-                        isActive && styles.gstMinimalRadioOptionActive,
-                      )}
-                      key={type}
-                    >
-                      <input
-                        checked={isActive}
-                        className={styles.gstMinimalRadioInput}
-                        disabled={isProcessing}
-                        name="gst-reconciliation-type"
-                        onChange={() => handleTypeChange(type)}
-                        type="radio"
-                      />
-                      <span
-                        className={joinClasses(
-                          styles.gstMinimalRadioIndicator,
-                          isActive && styles.gstMinimalRadioIndicatorActive,
-                        )}
-                      >
-                        <span className={styles.gstMinimalRadioIndicatorInner} />
-                      </span>
-                      <span className={styles.gstMinimalRadioText}>{content.gstFieldLabel.replace(' (Excel)', '')}</span>
-                      <InfoTooltip text={content.optionCopy} />
-                    </label>
-                  )
-                })}
-              </div>
-            </div>
-
-            <div className={styles.gstMinimalControlsSegment}>
-              <div className={styles.gstMinimalControlItem}>
-                <div className={styles.gstMinimalControlLabel}>
-                  <span>Ignore Decimal</span>
-                  <InfoTooltip text="Toggle decimal-insensitive matching for tighter invoice grouping." />
-                </div>
+              return (
                 <button
-                  aria-pressed={activeDraft.ignoreDecimal}
-                  className={joinClasses(
-                    styles.gstMinimalSwitch,
-                    activeDraft.ignoreDecimal && styles.gstMinimalSwitchActive,
-                  )}
+                  aria-selected={isActive}
+                  className={joinClasses(styles.gstTabButton, isActive && styles.gstTabButtonActive)}
                   disabled={isProcessing}
-                  onClick={() =>
-                    updateDraft(activeType, (current) => ({
-                      ...current,
-                      ignoreDecimal: !current.ignoreDecimal,
-                      processError: '',
-                      result: null,
-                    }))
-                  }
+                  key={type}
+                  onClick={() => handleTypeChange(type)}
+                  role="tab"
                   type="button"
                 >
-                  <span className={styles.gstMinimalSwitchTrack}>
-                    <span className={styles.gstMinimalSwitchThumb} />
+                  <span
+                    className={joinClasses(
+                      styles.gstTabButtonIndicator,
+                      isActive && styles.gstTabButtonIndicatorActive,
+                    )}
+                  >
+                    <span className={styles.gstTabButtonIndicatorInner} />
                   </span>
+                  <span className={styles.gstTabButtonText}>
+                    <WorkspaceIcon className={styles.gstTabButtonToolIcon} name={content.icon} size={20} />
+                    <span>{content.gstFieldLabel.replace(' (Excel)', '')}</span>
+                  </span>
+                  <InfoTooltip text={content.optionCopy} />
                 </button>
-              </div>
-            </div>
+              )
+            })}
+          </div>
 
-            <div className={styles.gstMinimalControlsSegment}>
-              <div className={styles.gstMinimalControlItem}>
-                <div className={styles.gstMinimalControlLabel}>
-                  <span>Amount Tolerance</span>
-                  <InfoTooltip text="Keep this small for cleaner matches. Default is 10." />
+          <div className={styles.gstWorkbenchLayout}>
+            <aside className={styles.gstWorkbenchSidebar}>
+              <section className={styles.gstWorkbenchControlsCard}>
+                <div className={styles.gstWorkbenchControlsGrid}>
+                  <div className={styles.gstWorkbenchControlBlock}>
+                    <div className={styles.gstWorkbenchControlHeader}>
+                      <div className={styles.gstMinimalControlLabel}>
+                        <span>Ignore Decimal</span>
+                        <InfoTooltip text="Toggle decimal-insensitive matching for tighter invoice grouping." />
+                      </div>
+                    </div>
+
+                    <div className={styles.gstWorkbenchControlBody}>
+                      <button
+                        aria-pressed={activeDraft.ignoreDecimal}
+                        className={joinClasses(
+                          styles.gstMinimalSwitch,
+                          activeDraft.ignoreDecimal && styles.gstMinimalSwitchActive,
+                        )}
+                        disabled={isProcessing}
+                        onClick={() =>
+                          updateDraft(activeType, (current) => ({
+                            ...current,
+                            ignoreDecimal: !current.ignoreDecimal,
+                            processError: '',
+                            result: null,
+                          }))
+                        }
+                        type="button"
+                      >
+                        <span className={styles.gstMinimalSwitchTrack}>
+                          <span className={styles.gstMinimalSwitchThumb} />
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className={styles.gstWorkbenchControlBlock}>
+                    <div className={styles.gstWorkbenchControlHeader}>
+                      <div className={styles.gstMinimalControlLabel}>
+                        <span>Amount Tolerance</span>
+                        <InfoTooltip text="Keep this small for cleaner matches. Default is 10." />
+                      </div>
+                    </div>
+
+                    <div className={styles.gstWorkbenchControlBody}>
+                      <div className={styles.gstMinimalStepperWrap}>
+                        <button
+                          aria-label="Decrease amount tolerance"
+                          className={styles.gstMinimalStepperButton}
+                          disabled={isProcessing}
+                          onClick={() => handleToleranceChange(Number(activeDraft.tolerance || 0) - 1)}
+                          type="button"
+                        >
+                          -
+                        </button>
+                        <input
+                          className={styles.gstMinimalToleranceInput}
+                          disabled={isProcessing}
+                          onChange={(event) => handleToleranceChange(event.target.value)}
+                          type="text"
+                          value={formatToleranceValue(activeDraft.tolerance)}
+                        />
+                        <button
+                          aria-label="Increase amount tolerance"
+                          className={styles.gstMinimalStepperButton}
+                          disabled={isProcessing}
+                          onClick={() => handleToleranceChange(Number(activeDraft.tolerance || 0) + 1)}
+                          type="button"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className={styles.gstMinimalStepperWrap}>
-                  <button
-                    aria-label="Decrease amount tolerance"
-                    className={styles.gstMinimalStepperButton}
-                    disabled={isProcessing}
-                    onClick={() => handleToleranceChange(Number(activeDraft.tolerance || 0) - 1)}
-                    type="button"
-                  >
-                    -
-                  </button>
-                  <input
-                    className={styles.gstMinimalToleranceInput}
-                    disabled={isProcessing}
-                    onChange={(event) => handleToleranceChange(event.target.value)}
-                    type="text"
-                    value={formatToleranceValue(activeDraft.tolerance)}
+              </section>
+
+              <aside className={styles.gstWorkbenchStatusCard}>
+                <div className={joinClasses(styles.invoiceSectionLabel, styles.gstMinimalSectionLabel)}>File Status</div>
+                <div className={styles.gstMinimalStatusBlock}>
+                  <span
+                    className={joinClasses(
+                      styles.invoiceStatusDot,
+                      statusTone === 'processing' && styles.invoiceStatusDotProcessing,
+                      statusTone === 'success' && styles.invoiceStatusDotSuccess,
+                      statusTone === 'warning' && styles.invoiceStatusDotWarning,
+                      statusTone === 'ready' && styles.invoiceStatusDotReady,
+                    )}
                   />
+                  <div className={styles.gstMinimalStatusCopy}>
+                    <strong>{statusTitle}</strong>
+                    <span>{statusMessage}</span>
+                  </div>
+                </div>
+                <div className={styles.gstMinimalActionStack}>
                   <button
-                    aria-label="Increase amount tolerance"
-                    className={styles.gstMinimalStepperButton}
-                    disabled={isProcessing}
-                    onClick={() => handleToleranceChange(Number(activeDraft.tolerance || 0) + 1)}
+                    className={joinClasses(styles.invoicePrimaryButton, styles.gstMinimalPrimaryButton)}
+                    disabled={!processingEnabled}
+                    onClick={handleProcess}
                     type="button"
                   >
-                    +
+                    {isProcessing ? 'Running reconciliation...' : 'Run reconciliation'}
                   </button>
+                  {activeDraft.result?.downloadHref ? (
+                    <button
+                      className={joinClasses(styles.invoiceSecondaryButton, styles.gstMinimalSecondaryButton)}
+                      disabled={isProcessing}
+                      onClick={handleDownloadCurrentResult}
+                      type="button"
+                    >
+                      Download result
+                    </button>
+                  ) : null}
+                </div>
+              </aside>
+            </aside>
+
+            <section className={styles.gstWorkbenchUploads}>
+              <div className={styles.gstWorkbenchUploadGrid}>
+                <div
+                  className={joinClasses(
+                    styles.gstWorkbenchUploadCard,
+                    activeDropzone === 'purchaseFile' && styles.gstWorkbenchUploadCardActive,
+                    !selectedClient && styles.gstMinimalUploadCardDisabled,
+                  )}
+                  onClick={() => handleBrowseClick('purchaseFile')}
+                  onDragEnter={(event) => {
+                    event.preventDefault()
+                    if (selectedClient && !isProcessing) {
+                      setActiveDropzone('purchaseFile')
+                    }
+                  }}
+                  onDragLeave={(event) => {
+                    event.preventDefault()
+                    if (activeDropzone === 'purchaseFile') {
+                      setActiveDropzone('')
+                    }
+                  }}
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={(event) => handleDrop(event, 'purchaseFile')}
+                  role="presentation"
+                >
+                  <span className={styles.gstMinimalUploadIcon}>
+                    <WorkspaceIcon name="upload" size={24} />
+                  </span>
+                  {activeDraft.purchaseFile ? (
+                    <button
+                      aria-label="Clear purchase register"
+                      className={styles.tallyUploadClearButton}
+                      disabled={isProcessing}
+                      onClick={(event) => {
+                        event.preventDefault()
+                        event.stopPropagation()
+                        handleClearFile('purchaseFile')
+                      }}
+                      type="button"
+                    >
+                      <WorkspaceIcon name="close" size={14} />
+                    </button>
+                  ) : null}
+                  <div className={styles.gstMinimalUploadTitle}>Purchase Register (Excel)</div>
+                  <p className={styles.gstMinimalUploadCopy}>
+                    {selectedClient
+                      ? activeDraft.purchaseFile
+                        ? activeDraft.purchaseFile.name
+                        : 'Drag and drop or browse to attach the purchase register.'
+                      : 'Select a client first to unlock upload.'}
+                  </p>
+                  <div className={styles.gstMinimalUploadMeta}>XLSX / XLS</div>
+                  <input
+                    accept=".xlsx,.xls"
+                    key={`${activeType}-purchase`}
+                    onChange={(event) => handleFilesSelected(event.target.files, 'purchaseFile')}
+                    ref={purchaseInputRef}
+                    style={{ display: 'none' }}
+                    type="file"
+                  />
+                </div>
+
+                <div
+                  className={joinClasses(
+                    styles.gstWorkbenchUploadCard,
+                    activeDropzone === 'gstFile' && styles.gstWorkbenchUploadCardActive,
+                    !selectedClient && styles.gstMinimalUploadCardDisabled,
+                  )}
+                  onClick={() => handleBrowseClick('gstFile')}
+                  onDragEnter={(event) => {
+                    event.preventDefault()
+                    if (selectedClient && !isProcessing) {
+                      setActiveDropzone('gstFile')
+                    }
+                  }}
+                  onDragLeave={(event) => {
+                    event.preventDefault()
+                    if (activeDropzone === 'gstFile') {
+                      setActiveDropzone('')
+                    }
+                  }}
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={(event) => handleDrop(event, 'gstFile')}
+                  role="presentation"
+                >
+                  <span className={styles.gstMinimalUploadIcon}>
+                    <WorkspaceIcon name="upload" size={24} />
+                  </span>
+                  {activeDraft.gstFile ? (
+                    <button
+                      aria-label="Clear GST file"
+                      className={styles.tallyUploadClearButton}
+                      disabled={isProcessing}
+                      onClick={(event) => {
+                        event.preventDefault()
+                        event.stopPropagation()
+                        handleClearFile('gstFile')
+                      }}
+                      type="button"
+                    >
+                      <WorkspaceIcon name="close" size={14} />
+                    </button>
+                  ) : null}
+                  <div className={styles.gstMinimalUploadTitle}>{activeTypeContent.gstFieldLabel}</div>
+                  <p className={styles.gstMinimalUploadCopy}>
+                    {selectedClient
+                      ? activeDraft.gstFile
+                        ? activeDraft.gstFile.name
+                        : `Drag and drop or browse to attach the ${activeTypeContent.gstFieldLabel.replace(' (Excel)', '')} file.`
+                      : 'Select a client first to unlock upload.'}
+                  </p>
+                  <div className={styles.gstMinimalUploadMeta}>XLSX / XLS</div>
+                  <input
+                    accept=".xlsx,.xls"
+                    key={`${activeType}-gst`}
+                    onChange={(event) => handleFilesSelected(event.target.files, 'gstFile')}
+                    ref={gstInputRef}
+                    style={{ display: 'none' }}
+                    type="file"
+                  />
                 </div>
               </div>
-            </div>
+            </section>
           </div>
-        </section>
-
-        <section className={styles.gstMinimalSourceGrid}>
-          <div
-            className={joinClasses(
-              styles.gstMinimalUploadCard,
-              activeDropzone === 'purchaseFile' && styles.gstMinimalUploadCardActive,
-              !selectedClient && styles.gstMinimalUploadCardDisabled,
-            )}
-            onClick={() => handleBrowseClick('purchaseFile')}
-            onDragEnter={(event) => {
-              event.preventDefault()
-              if (selectedClient && !isProcessing) {
-                setActiveDropzone('purchaseFile')
-              }
-            }}
-            onDragLeave={(event) => {
-              event.preventDefault()
-              if (activeDropzone === 'purchaseFile') {
-                setActiveDropzone('')
-              }
-            }}
-            onDragOver={(event) => event.preventDefault()}
-            onDrop={(event) => handleDrop(event, 'purchaseFile')}
-            role="presentation"
-          >
-            <span className={styles.gstMinimalUploadIcon}>
-              <WorkspaceIcon name="upload" size={24} />
-            </span>
-            {activeDraft.purchaseFile ? (
-              <button
-                aria-label="Clear purchase register"
-                className={styles.tallyUploadClearButton}
-                disabled={isProcessing}
-                onClick={(event) => {
-                  event.preventDefault()
-                  event.stopPropagation()
-                  handleClearFile('purchaseFile')
-                }}
-                type="button"
-              >
-                <WorkspaceIcon name="close" size={14} />
-              </button>
-            ) : null}
-            <div className={styles.gstMinimalUploadTitle}>Purchase Register (Excel)</div>
-            <p className={styles.gstMinimalUploadCopy}>
-              {selectedClient
-                ? activeDraft.purchaseFile
-                  ? activeDraft.purchaseFile.name
-                  : 'Drag and drop or browse to attach the purchase register.'
-                : 'Select a client first to unlock upload.'}
-            </p>
-            <div className={styles.gstMinimalUploadMeta}>XLSX / XLS</div>
-            <input
-              accept=".xlsx,.xls"
-              key={`${activeType}-purchase`}
-              onChange={(event) => handleFilesSelected(event.target.files, 'purchaseFile')}
-              ref={purchaseInputRef}
-              style={{ display: 'none' }}
-              type="file"
-            />
-          </div>
-
-          <div
-            className={joinClasses(
-              styles.gstMinimalUploadCard,
-              activeDropzone === 'gstFile' && styles.gstMinimalUploadCardActive,
-              !selectedClient && styles.gstMinimalUploadCardDisabled,
-            )}
-            onClick={() => handleBrowseClick('gstFile')}
-            onDragEnter={(event) => {
-              event.preventDefault()
-              if (selectedClient && !isProcessing) {
-                setActiveDropzone('gstFile')
-              }
-            }}
-            onDragLeave={(event) => {
-              event.preventDefault()
-              if (activeDropzone === 'gstFile') {
-                setActiveDropzone('')
-              }
-            }}
-            onDragOver={(event) => event.preventDefault()}
-            onDrop={(event) => handleDrop(event, 'gstFile')}
-            role="presentation"
-          >
-            <span className={styles.gstMinimalUploadIcon}>
-              <WorkspaceIcon name="upload" size={24} />
-            </span>
-            {activeDraft.gstFile ? (
-              <button
-                aria-label="Clear GST file"
-                className={styles.tallyUploadClearButton}
-                disabled={isProcessing}
-                onClick={(event) => {
-                  event.preventDefault()
-                  event.stopPropagation()
-                  handleClearFile('gstFile')
-                }}
-                type="button"
-              >
-                <WorkspaceIcon name="close" size={14} />
-              </button>
-            ) : null}
-            <div className={styles.gstMinimalUploadTitle}>{activeTypeContent.gstFieldLabel}</div>
-            <p className={styles.gstMinimalUploadCopy}>
-              {selectedClient
-                ? activeDraft.gstFile
-                  ? activeDraft.gstFile.name
-                  : `Drag and drop or browse to attach the ${activeTypeContent.gstFieldLabel.replace(' (Excel)', '')} file.`
-                : 'Select a client first to unlock upload.'}
-            </p>
-            <div className={styles.gstMinimalUploadMeta}>XLSX / XLS</div>
-            <input
-              accept=".xlsx,.xls"
-              key={`${activeType}-gst`}
-              onChange={(event) => handleFilesSelected(event.target.files, 'gstFile')}
-              ref={gstInputRef}
-              style={{ display: 'none' }}
-              type="file"
-            />
-          </div>
-
-          <aside className={styles.gstMinimalStatusCard}>
-            <div className={joinClasses(styles.invoiceSectionLabel, styles.gstMinimalSectionLabel)}>File Status</div>
-            <div className={styles.gstMinimalStatusBlock}>
-              <span
-                className={joinClasses(
-                  styles.invoiceStatusDot,
-                  statusTone === 'processing' && styles.invoiceStatusDotProcessing,
-                  statusTone === 'success' && styles.invoiceStatusDotSuccess,
-                  statusTone === 'warning' && styles.invoiceStatusDotWarning,
-                  statusTone === 'ready' && styles.invoiceStatusDotReady,
-                )}
-              />
-              <div className={styles.gstMinimalStatusCopy}>
-                <strong>{statusTitle}</strong>
-                <span>{statusMessage}</span>
-              </div>
-            </div>
-            <div className={styles.gstMinimalActionStack}>
-              <button
-                className={joinClasses(styles.invoicePrimaryButton, styles.gstMinimalPrimaryButton)}
-                disabled={!processingEnabled}
-                onClick={handleProcess}
-                type="button"
-              >
-                {isProcessing ? 'Running reconciliation...' : 'Run reconciliation'}
-              </button>
-              {activeDraft.result?.downloadHref ? (
-                <button
-                  className={joinClasses(styles.invoiceSecondaryButton, styles.gstMinimalSecondaryButton)}
-                  disabled={isProcessing}
-                  onClick={handleDownloadCurrentResult}
-                  type="button"
-                >
-                  Download result
-                </button>
-              ) : null}
-            </div>
-          </aside>
         </section>
 
         <section className={styles.gstMinimalUnmatchedCard}>
           <div className={styles.invoiceHistoryHeader}>
-            <h2 className={styles.gstMinimalHistoryHeader}>Unmatched rows</h2>
+            <h2 className={styles.gstMinimalHistoryHeader}>Mismatch review</h2>
+            {mismatchView.hasResult ? (
+              <span className={styles.gstMismatchHeaderMeta}>
+                {mismatchView.hasMismatchRows ? mismatchRowCountLabel : 'All invoices matched'}
+              </span>
+            ) : null}
           </div>
-          <div className={styles.gstMinimalUnmatchedBody} />
+          {!mismatchView.hasResult ? (
+            <div className={styles.gstMismatchPlaceholderState}>
+              <strong>Run a reconciliation to review mismatched rows here.</strong>
+              <span>The latest Purchase Register and GST comparison will appear in an Excel-like sheet after processing.</span>
+            </div>
+          ) : mismatchView.hasMismatchRows ? (
+            <div className={styles.gstMismatchPanel}>
+              <div className={styles.gstMismatchTabRow} role="tablist" aria-label="Mismatch categories">
+                {mismatchView.sections.map((section) => {
+                  const isActive = section.id === resolvedMismatchTabId
+
+                  return (
+                    <button
+                      aria-controls={`gst-mismatch-panel-${section.id}`}
+                      aria-selected={isActive}
+                      className={joinClasses(styles.gstMismatchTabButton, isActive && styles.gstMismatchTabButtonActive)}
+                      key={section.id}
+                      onClick={() => setActiveMismatchTabId(section.id)}
+                      role="tab"
+                      type="button"
+                    >
+                      <span>{section.label}</span>
+                      <span className={styles.gstMismatchTabCount}>{section.rows.length}</span>
+                    </button>
+                  )
+                })}
+              </div>
+
+              <div
+                className={styles.gstMismatchSheet}
+                id={`gst-mismatch-panel-${resolvedMismatchTabId}`}
+                role="tabpanel"
+              >
+                {activeMismatchSection?.rows.length ? (
+                  <div className={joinClasses(styles.invoiceHistoryTableWrap, styles.gstMismatchTableWrap)}>
+                    <table className={joinClasses(styles.invoiceHistoryTable, styles.gstMismatchTable)}>
+                      <thead>
+                        <tr>
+                          <th className={styles.gstMismatchIndexColumn}>Row</th>
+                          <th>Supplier name</th>
+                          <th>Reason</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {activeMismatchSection.rows.map((row, index) => (
+                          <tr key={row.id}>
+                            <td>{index + 1}</td>
+                            <td className={styles.gstMismatchSupplierCell} title={row.supplierName}>
+                              {row.supplierName}
+                            </td>
+                            <td className={styles.gstMismatchReasonCell}>{row.reason}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className={styles.gstMismatchEmptyState}>
+                    <strong>No mismatched rows in this tab.</strong>
+                    <span>{activeMismatchSection?.emptyState}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className={styles.gstMismatchSuccessState}>
+              <strong>All invoices matched.</strong>
+              <span>{mismatchView.successMessage}</span>
+            </div>
+          )}
         </section>
 
         <section className={styles.gstMinimalHistoryCard}>

@@ -280,7 +280,7 @@ export default function ClientSelectionDropdown({
         >
           <label className={styles.clientDropdownSimpleSearch}>
             <span className={styles.clientDropdownSimpleSearchIcon}>
-              <WorkspaceIcon name="search" size={16} />
+              <WorkspaceIcon name="search" size={14} />
             </span>
             <input
               aria-activedescendant={

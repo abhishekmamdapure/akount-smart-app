@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import WorkspaceIcon from './WorkspaceIcon'
 import workspaceStyles from './Workspace.module.css'
-import ClientSelectionDropdown from './tools/shared/ClientSelectionDropdown'
 import styles from './tools/shared/Tools.module.css'
+import ToolClientSelector from './tools/shared/ToolClientSelector'
 import { useWorkspaceToolClient } from './tools/shared/toolClientState'
 import {
   createTallyHistoryEntry,
@@ -482,22 +482,19 @@ export default function TallyXmlConverterPage() {
           <h1 className={styles.invoicePageTitle}>Tally XML Converter</h1>
         </div>
 
-        <div className={styles.invoiceClientSlot}>
-          <ClientSelectionDropdown
-            clients={clients}
-            errorMessage={errorMessage}
-            filteredClients={filteredClients}
-            menuAlign="end"
-            onCreateClient={openClientModal}
-            onQueryChange={setQuery}
-            onRetry={reloadClients}
-            onSelectClient={handleClientChange}
-            query={query}
-            selectedClient={selectedClient}
-            status={status}
-            variant="badge"
-          />
-        </div>
+        <ToolClientSelector
+          clients={clients}
+          errorMessage={errorMessage}
+          filteredClients={filteredClients}
+          onCreateClient={openClientModal}
+          onQueryChange={setQuery}
+          onRetry={reloadClients}
+          onSelectClient={handleClientChange}
+          query={query}
+          selectedClient={selectedClient}
+          status={status}
+          variant="badge"
+        />
       </section>
 
       <article className={styles.invoiceMainCard}>

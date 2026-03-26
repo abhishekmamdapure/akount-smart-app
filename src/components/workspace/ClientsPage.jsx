@@ -1,40 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
-import styles from './Workspace.module.css'
+import ClientCard from './ClientCard'
+import clientStyles from './ClientManagement.module.css'
+import workspaceStyles from './Workspace.module.css'
 import WorkspaceIcon from './WorkspaceIcon'
-
-function getInitials(name) {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase()
-}
-
-function formatDate(dateValue) {
-  if (!dateValue) {
-    return '-'
-  }
-
-  return new Intl.DateTimeFormat('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  }).format(new Date(dateValue))
-}
-
-function formatSearchableText(client) {
-  return [client.name, client.tradeName, client.gst, client.pan, client.email, client.phone]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase()
-}
-
-function formatClientBadge(count) {
-  return `#${String(count).padStart(2, '0')}`
-}
+import {
+  CLIENT_CARD_PAGE_SIZE,
+  filterClientsByQuery,
+  formatClientCountBadge,
+  paginateClients,
+} from './clientManagementHelpers'
 
 function buildUserHeaders(currentUser) {
   return {
@@ -43,6 +18,11 @@ function buildUserHeaders(currentUser) {
   }
 }
 
+/**
+ * Renders the redesigned client-management workspace page.
+ *
+ * @returns {JSX.Element} The client-management page.
+ */
 export default function ClientsPage() {
   const outletContext = useOutletContext() ?? {}
   const authReady = outletContext.authReady ?? false
@@ -60,7 +40,6 @@ export default function ClientsPage() {
   const [actionClientId, setActionClientId] = useState('')
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleteState, setDeleteState] = useState('confirm')
-  const pageSize = 10
 
   async function loadClients() {
     if (!authReady) {
@@ -135,7 +114,7 @@ export default function ClientsPage() {
         return
       }
 
-      setClients((current) => current.filter((entry) => entry.id !== deleteTarget.id))
+      setClients((currentClients) => currentClients.filter((client) => client.id !== deleteTarget.id))
       setDeleteState('success')
       setActionErrorMessage('')
     } catch (error) {
@@ -147,110 +126,143 @@ export default function ClientsPage() {
   }
 
   useEffect(() => {
-    loadClients()
+    void loadClients()
   }, [authReady, currentUser?.email, currentUser?.id, clientRefreshKey])
 
   useEffect(() => {
     setCurrentPage(1)
   }, [query, clientRefreshKey])
 
-  const filteredClients = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase()
-    if (!normalizedQuery) {
-      return clients
-    }
-
-    return clients.filter((client) => formatSearchableText(client).includes(normalizedQuery))
-  }, [clients, query])
-
-  const totalPages = Math.max(1, Math.ceil(filteredClients.length / pageSize))
-  const showPagination = filteredClients.length > pageSize
+  const filteredClients = useMemo(() => filterClientsByQuery(clients, query), [clients, query])
+  const pagination = useMemo(
+    () => paginateClients(filteredClients, currentPage, CLIENT_CARD_PAGE_SIZE),
+    [filteredClients, currentPage],
+  )
 
   useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages)
+    if (currentPage !== pagination.currentPage) {
+      setCurrentPage(pagination.currentPage)
     }
-  }, [currentPage, totalPages])
-
-  const visibleClients = useMemo(() => {
-    const startIndex = (currentPage - 1) * pageSize
-    return filteredClients.slice(startIndex, startIndex + pageSize)
-  }, [filteredClients, currentPage])
+  }, [currentPage, pagination.currentPage])
 
   const totalClientCount = clients.length
-  const countMeta = query.trim()
+  const hasSearchQuery = query.trim().length > 0
   const deleteSucceeded = deleteState === 'success'
+  const showPagination = pagination.totalItems > CLIENT_CARD_PAGE_SIZE
+
+  const resultsSummary =
+    !authReady || status === 'loading'
+      ? 'Fetching client records for this workspace.'
+      : status === 'error'
+        ? 'Client records could not be loaded for this workspace.'
+        : pagination.totalItems === 0
+          ? totalClientCount === 0
+            ? 'No client records have been added to this workspace yet.'
+            : 'No client records match the active search.'
+          : `Showing ${pagination.startItemNumber} to ${pagination.endItemNumber} of ${pagination.totalItems} client record${pagination.totalItems === 1 ? '' : 's'} in view.`
 
   return (
-    <div className={styles.page}>
-      <section className={styles.pageToolbar}>
-        <div className={styles.clientsCountCard}>
-          <div className={styles.clientsCountRow}>
-            <h1 className={styles.clientsCountTitle}>Clients</h1>
-            <span className={styles.clientsCountBadge}>{formatClientBadge(totalClientCount)}</span>
+    <div className={`${workspaceStyles.page} ${clientStyles.clientPage}`}>
+      <section className={clientStyles.stickyToolbar}>
+        <div className={clientStyles.toolbarSurface}>
+          <div className={clientStyles.toolbarTopRow}>
+            <div>
+              <p className={clientStyles.toolbarLabel}>Clients management</p>
+              <div className={clientStyles.toolbarTitleRow}>
+                <h1 className={clientStyles.toolbarTitle}>Clients</h1>
+                <span className={clientStyles.toolbarBadge}>{formatClientCountBadge(totalClientCount)}</span>
+              </div>
+            </div>
+
+            <div className={clientStyles.toolbarActions}>
+              <label className={clientStyles.filterField}>
+                <WorkspaceIcon name="filter" size={16} />
+                <input
+                  className={clientStyles.filterInput}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Filter by name, GST, PAN, email, or phone"
+                  type="search"
+                  value={query}
+                />
+              </label>
+
+              <button className={clientStyles.primaryButton} onClick={openClientModal} type="button">
+                <WorkspaceIcon name="plus" size={16} />
+                <span>New Client</span>
+              </button>
+            </div>
           </div>
-          <p className={styles.clientsCountMeta}>{countMeta}</p>
+
+          <div className={clientStyles.resultsBar}>
+            <p className={clientStyles.resultsCopy}>{resultsSummary}</p>
+            <div className={clientStyles.resultsMeta}>
+              {hasSearchQuery ? <span className={clientStyles.queryBadge}>Filtered by "{query.trim()}"</span> : null}
+              {status === 'error' ? <span className={clientStyles.queryBadge}>Retry available</span> : null}
+            </div>
+          </div>
         </div>
-
-        <label className={styles.inlineSearch}>
-          <WorkspaceIcon name="filter" size={16} />
-          <input
-            className={styles.inlineSearchInput}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Filter by name, GST, PAN, email, or phone"
-            type="search"
-            value={query}
-          />
-        </label>
-
-        <button className={styles.gradientButton} onClick={openClientModal} type="button">
-          <WorkspaceIcon name="plus" size={16} />
-          <span>New Client</span>
-        </button>
       </section>
 
       {!authReady || status === 'loading' ? (
-        <section className={styles.statusPanel}>
-          <WorkspaceIcon name="clients" size={20} />
-          <div>
-            <h2>Loading clients</h2>
-            <p className={styles.statusText}>Fetching client records for the signed-in user from MongoDB.</p>
+        <section className={clientStyles.statusPanel}>
+          <div className={clientStyles.statusBody}>
+            <span className={clientStyles.statusIcon}>
+              <WorkspaceIcon name="clients" size={20} />
+            </span>
+            <div>
+              <h2 className={clientStyles.statusTitle}>Loading clients</h2>
+              <p className={clientStyles.statusText}>
+                Fetching client records for the signed-in workspace and preparing the redesigned card layout.
+              </p>
+            </div>
           </div>
         </section>
       ) : null}
 
       {authReady && status === 'error' ? (
-        <section className={styles.statusPanel}>
-          <WorkspaceIcon name="help" size={20} />
-          <div>
-            <h2>Could not load clients</h2>
-            <p className={styles.errorText}>{errorMessage}</p>
+        <section className={clientStyles.statusPanel}>
+          <div className={clientStyles.statusBody}>
+            <span className={clientStyles.statusIcon}>
+              <WorkspaceIcon name="help" size={20} />
+            </span>
+            <div>
+              <h2 className={clientStyles.statusTitle}>Could not load clients</h2>
+              <p className={`${clientStyles.statusText} ${clientStyles.statusError}`}>{errorMessage}</p>
+            </div>
           </div>
-          <button className={styles.secondaryButton} onClick={loadClients} type="button">
-            Retry
-          </button>
+
+          <div className={clientStyles.statusActions}>
+            <button className={clientStyles.secondaryButton} onClick={loadClients} type="button">
+              Retry
+            </button>
+          </div>
         </section>
       ) : null}
 
       {status === 'ready' && filteredClients.length === 0 ? (
-        <section className={styles.emptyState}>
-          <span className={styles.emptyStateIcon}>
-            <WorkspaceIcon name="clients" size={22} />
-          </span>
-          <h2>{clients.length === 0 ? 'No Client Found' : 'No Matching Client'}</h2>
-          <p className={styles.statusText}>
-            {clients.length === 0
-              ? 'This user does not have any clients attached yet. Add one to populate the CRM workspace.'
-              : 'Try a different search term or clear the current filter.'}
-          </p>
-          <div className={styles.statusActions}>
+        <section className={clientStyles.statusPanel}>
+          <div className={clientStyles.statusBody}>
+            <span className={clientStyles.statusIcon}>
+              <WorkspaceIcon name="clients" size={20} />
+            </span>
+            <div>
+              <h2 className={clientStyles.statusTitle}>{clients.length === 0 ? 'No clients yet' : 'No matches found'}</h2>
+              <p className={clientStyles.statusText}>
+                {clients.length === 0
+                  ? 'Create the first client record to populate the workspace and unlock client-linked tools.'
+                  : 'Try a different filter or clear the current search to see the full client list again.'}
+              </p>
+            </div>
+          </div>
+
+          <div className={clientStyles.statusActions}>
             {clients.length === 0 ? (
-              <button className={styles.gradientButton} onClick={openClientModal} type="button">
+              <button className={clientStyles.primaryButton} onClick={openClientModal} type="button">
                 <WorkspaceIcon name="plus" size={16} />
                 <span>New Client</span>
               </button>
             ) : (
-              <button className={styles.ghostButton} onClick={() => setQuery('')} type="button">
+              <button className={clientStyles.ghostButton} onClick={() => setQuery('')} type="button">
                 Clear Search
               </button>
             )}
@@ -259,155 +271,37 @@ export default function ClientsPage() {
       ) : null}
 
       {status === 'ready' && filteredClients.length > 0 ? (
-        <section className={styles.panel}>
-          <div className={styles.clientsPanelHeader}>
-            <p className={styles.panelText}>
-              Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredClients.length)} of{' '}
-              {filteredClients.length} client record{filteredClients.length === 1 ? '' : 's'} in view.
-            </p>
-            {actionErrorMessage ? <p className={styles.inlineError}>{actionErrorMessage}</p> : null}
-          </div>
-
-          <div className={styles.tableWrap}>
-            <table className={`${styles.dataTable} ${styles.clientsTable}`}>
-              <thead>
-                <tr>
-                  <th>Client</th>
-                  <th>Trade name</th>
-                  <th>GST / PAN</th>
-                  <th>Contact</th>
-                  <th>Added on</th>
-                  <th className={styles.actionsColumn}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleClients.map((client) => {
-                  const isDeleting = actionClientId === client.id
-
-                  return (
-                    <tr key={client.id}>
-                      <td>
-                        <div className={styles.entityCell}>
-                          <span className={styles.entityMark}>{getInitials(client.name)}</span>
-                          <div className={styles.entityMeta}>
-                            <strong>{client.name}</strong>
-                            <span className={styles.metaNote}>{client.address}</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td>{client.tradeName || 'Not set'}</td>
-                      <td>
-                        <div className={styles.codeStack}>
-                          <code>{client.gst || 'Not set'}</code>
-                          <span>{client.pan || 'PAN not set'}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <div className={styles.contactStack}>
-                          <span>
-                            <WorkspaceIcon name="mail" size={14} />
-                            {client.email}
-                          </span>
-                          <span>
-                            <WorkspaceIcon name="phone" size={14} />
-                            {client.phone}
-                          </span>
-                        </div>
-                      </td>
-                      <td>{formatDate(client.createdAt)}</td>
-                      <td>
-                        <div className={styles.rowActions}>
-                          <button
-                            className={styles.rowActionButton}
-                            disabled={isDeleting}
-                            onClick={() => openEditClientModal(client)}
-                            type="button"
-                          >
-                            <WorkspaceIcon name="edit" size={14} />
-                            <span>Edit</span>
-                          </button>
-                          <button
-                            className={`${styles.rowActionButton} ${styles.rowActionButtonDanger}`}
-                            disabled={isDeleting}
-                            onClick={() => requestDeleteClient(client)}
-                            type="button"
-                          >
-                            <WorkspaceIcon name="trash" size={14} />
-                            <span>{isDeleting ? 'Deleting...' : 'Delete'}</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          <div className={styles.mobileClientGrid}>
-            {visibleClients.map((client) => {
-              const isDeleting = actionClientId === client.id
-
-              return (
-                <article className={styles.mobileClientCard} key={client.id}>
-                  <div className={styles.mobileClientHeader}>
-                    <span className={styles.entityMark}>{getInitials(client.name)}</span>
-                    <div className={styles.entityMeta}>
-                      <strong>{client.name}</strong>
-                      <span>{client.tradeName || 'Trade name not set'}</span>
-                    </div>
-                  </div>
-
-                  <div className={styles.mobileClientMeta}>
-                    <span>{client.gst || 'GST not set'}</span>
-                    <span>{client.pan || 'PAN not set'}</span>
-                    <span>{client.email}</span>
-                    <span>{client.phone}</span>
-                    <span>{client.address}</span>
-                  </div>
-
-                  <div className={styles.mobileClientFooter}>
-                    <span>{formatDate(client.createdAt)}</span>
-                    <div className={styles.rowActions}>
-                      <button className={styles.rowActionButton} onClick={() => openEditClientModal(client)} type="button">
-                        <WorkspaceIcon name="edit" size={14} />
-                        <span>Edit</span>
-                      </button>
-                      <button
-                        className={`${styles.rowActionButton} ${styles.rowActionButtonDanger}`}
-                        disabled={isDeleting}
-                        onClick={() => requestDeleteClient(client)}
-                        type="button"
-                      >
-                        <WorkspaceIcon name="trash" size={14} />
-                        <span>{isDeleting ? 'Deleting...' : 'Delete'}</span>
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              )
-            })}
-          </div>
+        <>
+          <section className={clientStyles.clientGrid}>
+            {pagination.pageItems.map((client) => (
+              <ClientCard
+                client={client}
+                isDeleting={actionClientId === client.id}
+                key={client.id}
+                onDelete={requestDeleteClient}
+                onEdit={openEditClientModal}
+              />
+            ))}
+          </section>
 
           {showPagination ? (
-            <div className={styles.paginationRow}>
-              <span>
-                Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredClients.length)} of{' '}
-                {filteredClients.length} clients
+            <div className={clientStyles.paginationRow}>
+              <span className={clientStyles.paginationCopy}>
+                Page {pagination.currentPage} of {pagination.totalPages}
               </span>
 
-              <div className={styles.paginationButtons}>
+              <div className={clientStyles.paginationButtons}>
                 <button
-                  className={styles.pageButton}
-                  disabled={currentPage === 1}
+                  className={clientStyles.pageButton}
+                  disabled={pagination.currentPage === 1}
                   onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
                   type="button"
                 >
                   Prev
                 </button>
-                {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
+                {Array.from({ length: pagination.totalPages }, (_, index) => index + 1).map((pageNumber) => (
                   <button
-                    className={`${styles.pageButton} ${currentPage === pageNumber ? styles.pageButtonActive : ''}`}
+                    className={`${clientStyles.pageButton} ${pagination.currentPage === pageNumber ? clientStyles.activePageButton : ''}`}
                     key={pageNumber}
                     onClick={() => setCurrentPage(pageNumber)}
                     type="button"
@@ -416,9 +310,9 @@ export default function ClientsPage() {
                   </button>
                 ))}
                 <button
-                  className={styles.pageButton}
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                  className={clientStyles.pageButton}
+                  disabled={pagination.currentPage === pagination.totalPages}
+                  onClick={() => setCurrentPage((page) => Math.min(pagination.totalPages, page + 1))}
                   type="button"
                 >
                   Next
@@ -426,55 +320,76 @@ export default function ClientsPage() {
               </div>
             </div>
           ) : null}
-        </section>
+        </>
       ) : null}
 
       {deleteTarget ? (
-        <div className={styles.modalScrim} onClick={closeDeleteModal} role="presentation">
+        <div className={clientStyles.modalScrim} onClick={closeDeleteModal} role="presentation">
           <div
             aria-modal="true"
-            className={styles.confirmModal}
+            className={clientStyles.confirmDialog}
             onClick={(event) => event.stopPropagation()}
             role="dialog"
           >
-            <div className={styles.confirmHeader}>
-              <span className={`${styles.confirmIcon} ${deleteSucceeded ? styles.confirmIconSuccess : ''}`}>
-                <WorkspaceIcon className={deleteSucceeded ? styles.confirmTick : ''} name={deleteSucceeded ? 'check' : 'trash'} size={18} />
-              </span>
-              <div>
-                <p className={styles.eyebrow}>{deleteSucceeded ? 'Deletion Complete' : 'Delete Client'}</p>
-                <h2 className={styles.confirmTitle}>
-                  {deleteSucceeded ? `${deleteTarget.name} deleted` : `Delete ${deleteTarget.name}?`}
-                </h2>
+            <div className={clientStyles.confirmHeader}>
+              <div className={clientStyles.modalHeaderContent}>
+                <span
+                  className={`${clientStyles.confirmIcon} ${deleteSucceeded ? clientStyles.confirmIconSuccess : ''}`}
+                >
+                  <WorkspaceIcon name={deleteSucceeded ? 'check' : 'trash'} size={18} />
+                </span>
+                <div>
+                  <p className={clientStyles.dialogEyebrow}>{deleteSucceeded ? 'Deletion complete' : 'Delete client'}</p>
+                  <h2 className={clientStyles.confirmTitle}>
+                    {deleteSucceeded ? `${deleteTarget.name} deleted` : `Delete ${deleteTarget.name}?`}
+                  </h2>
+                </div>
               </div>
+
+              {!deleteSucceeded ? (
+                <button
+                  aria-label="Close delete confirmation"
+                  className={clientStyles.modalCloseButton}
+                  disabled={Boolean(actionClientId)}
+                  onClick={closeDeleteModal}
+                  type="button"
+                >
+                  <WorkspaceIcon name="close" size={16} />
+                </button>
+              ) : null}
             </div>
 
-            <p className={styles.confirmText}>
+            <p className={clientStyles.confirmText}>
               {deleteSucceeded
-                ? 'Client deletion was successful. The record has been removed from your CRM workspace.'
-                : 'This will permanently remove the client and all its associated data from your workspace.'}
+                ? 'The client record has been removed from the workspace and the refreshed grid is ready.'
+                : 'This permanently removes the client from your CRM workspace and cannot be undone.'}
             </p>
 
-            {!deleteSucceeded && actionErrorMessage ? <p className={styles.modalError}>{actionErrorMessage}</p> : null}
+            {!deleteSucceeded && actionErrorMessage ? <p className={clientStyles.modalError}>{actionErrorMessage}</p> : null}
 
-            <div className={styles.confirmActions}>
+            <div className={clientStyles.confirmActions}>
               {deleteSucceeded ? (
-                <button className={styles.gradientButton} onClick={closeDeleteModal} type="button">
-                  <WorkspaceIcon name="check" size={14} />
+                <button className={clientStyles.primaryButton} onClick={closeDeleteModal} type="button">
+                  <WorkspaceIcon name="check" size={16} />
                   <span>Done</span>
                 </button>
               ) : (
                 <>
-                  <button className={styles.textButton} disabled={Boolean(actionClientId)} onClick={closeDeleteModal} type="button">
+                  <button
+                    className={clientStyles.ghostButton}
+                    disabled={Boolean(actionClientId)}
+                    onClick={closeDeleteModal}
+                    type="button"
+                  >
                     Cancel
                   </button>
                   <button
-                    className={styles.dangerButton}
+                    className={clientStyles.dangerButton}
                     disabled={Boolean(actionClientId)}
                     onClick={confirmDeleteClient}
                     type="button"
                   >
-                    <WorkspaceIcon name="trash" size={14} />
+                    <WorkspaceIcon name="trash" size={16} />
                     <span>{actionClientId ? 'Deleting...' : 'Delete Client'}</span>
                   </button>
                 </>

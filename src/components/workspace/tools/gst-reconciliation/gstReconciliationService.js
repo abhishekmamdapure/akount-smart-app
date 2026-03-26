@@ -113,6 +113,10 @@ function normalizeProcessingTime(value) {
   return Number.isFinite(numeric) && numeric >= 0 ? numeric : null
 }
 
+function normalizeMismatchRows(value) {
+  return Array.isArray(value) ? value : []
+}
+
 export async function fetchGstHistory({ clientId, currentUser }) {
   const response = await fetch(`/api/gst-reconciliation?clientId=${encodeURIComponent(clientId)}`, {
     headers: buildGstApiHeaders(currentUser),
@@ -326,13 +330,24 @@ export async function processGstFiles({ draft, selectedClient, type }) {
       }
     }
 
+    const purchaseRegisterMismatches = normalizeMismatchRows(
+      data?.mismtached_rows_purchase_register ?? data?.mismatched_rows_purchase_register,
+    )
+    const gstMismatches = normalizeMismatchRows(
+      data?.mismtached_rows_gstr_2b_4a ?? data?.mismatched_rows_gstr_2b_4a,
+    )
+
     const result = {
       clientName: selectedClient.name,
       downloadHref: buildDownloadHref(data?.download_url),
       downloadUrl: data?.download_url || '',
       fileId: data?.file_id || '',
       gstFileName: draft.gstFile.name,
+      mismatchedRowsGstr2b4a: gstMismatches,
+      mismatchedRowsPurchaseRegister: purchaseRegisterMismatches,
       message: 'GST reconciliation completed successfully. Review the generated output and download the result if available.',
+      mismtached_rows_gstr_2b_4a: gstMismatches,
+      mismtached_rows_purchase_register: purchaseRegisterMismatches,
       processingTimeSec: null,
       purchaseFileName: draft.purchaseFile.name,
       type,

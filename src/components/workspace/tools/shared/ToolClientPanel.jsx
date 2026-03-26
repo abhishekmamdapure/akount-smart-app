@@ -1,6 +1,6 @@
-import ClientSelectionDropdown from './ClientSelectionDropdown'
 import workspaceStyles from '../../Workspace.module.css'
 import styles from './Tools.module.css'
+import ToolClientSelector from './ToolClientSelector'
 
 function joinClasses(...values) {
   return values.filter(Boolean).join(' ')
@@ -60,10 +60,11 @@ export default function ToolClientPanel({
 
       <div className={styles.clientSelectionRow}>
         <div className={styles.clientDropdownBlock}>
-          <ClientSelectionDropdown
+          <ToolClientSelector
             clients={clients}
             errorMessage={errorMessage}
             filteredClients={filteredClients}
+            fullWidth
             onCreateClient={onCreateClient}
             onQueryChange={onQueryChange}
             onRetry={onRetry}

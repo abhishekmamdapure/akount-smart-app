@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
+import WorkspaceIcon from '../../WorkspaceIcon'
 import workspaceStyles from '../../Workspace.module.css'
 import styles from '../shared/Tools.module.css'
-import ConvertExcelTool from './components/ConvertExcelTool'
-import ConvertWordTool from './components/ConvertWordTool'
+import CompressPdfTool from './components/CompressPdfTool'
+import ConvertPdfTool from './components/ConvertPdfTool'
 import PageNumbersTool from './components/PageNumbersTool'
 import PdfHistoryPanel from './components/PdfHistoryPanel'
 import PdfToolHome from './components/PdfToolHome'
@@ -115,12 +116,12 @@ export default function PdfToolsPage() {
       return <WatermarkTool onUsage={handleUsage} />
     }
 
-    if (activeTool === 'to_word') {
-      return <ConvertWordTool onUsage={handleUsage} />
+    if (activeTool === 'convert_pdf') {
+      return <ConvertPdfTool onUsage={handleUsage} />
     }
 
-    if (activeTool === 'to_excel') {
-      return <ConvertExcelTool onUsage={handleUsage} />
+    if (activeTool === 'compress_pdf') {
+      return <CompressPdfTool onUsage={handleUsage} />
     }
 
     return <PdfToolHome onOpenTool={setActiveTool} />
@@ -130,16 +131,18 @@ export default function PdfToolsPage() {
     <div className={joinClasses(workspaceStyles.page, styles.toolPage, styles.pdfToolsPage)}>
       <section className={styles.pdfToolsTopbar}>
         <div>
-          <p className={workspaceStyles.eyebrow}>Document toolkit</p>
           <h1 className={workspaceStyles.pageTitle}>PDF Tools</h1>
-          <p className={workspaceStyles.pageText}>
-            One workspace for split/merge, page edits, watermarking, and conversion workflows.
-          </p>
         </div>
 
         {activeTool ? (
-          <button className={styles.uploadActionSecondary} onClick={() => setActiveTool('')} type="button">
-            <span>Back to tools</span>
+          <button
+            aria-label="Back to tools"
+            className={styles.pdfToolsBackButton}
+            onClick={() => setActiveTool('')}
+            type="button"
+          >
+            <WorkspaceIcon className={styles.pdfToolsBackButtonIcon} name="arrowRight" size={15} />
+            <span>Back</span>
           </button>
         ) : (
           <span className={styles.invoiceMetaPill}>{TOOL_CARDS.length} tools available</span>

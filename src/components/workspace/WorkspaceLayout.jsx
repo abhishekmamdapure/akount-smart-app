@@ -5,6 +5,7 @@ import { TEST_CRM_USER, USE_TEST_CRM_USER } from '../../../shared/clientCrmFixtu
 import ClientModal from './ClientModal'
 import styles from './Workspace.module.css'
 import WorkspaceIcon from './WorkspaceIcon'
+import { workspaceRoutes } from '../../workspaceRoutes'
 import {
   mobileNavigation,
   navigationSections,
@@ -231,7 +232,7 @@ export default function WorkspaceLayout() {
 
   function handleAccountClick() {
     setProfileMenuOpen(false)
-    navigate('/dashboard/settings')
+    navigate(workspaceRoutes.settings)
   }
 
   async function handleProfileLogoutClick() {

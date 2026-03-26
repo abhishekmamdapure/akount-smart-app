@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="256" height="256">
+
+  <!-- PDF Document (white outline) -->
+  <path d="M14 8 L60 8 L74 22 L74 82 L14 82 Z"
+        fill="none" stroke="white" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M60 8 L60 22 L74 22"
+        fill="none" stroke="white" stroke-width="3.5" stroke-linejoin="round"/>
+  <text x="44" y="52" text-anchor="middle"
+        font-family="Arial, sans-serif" font-weight="700"
+        font-size="14" fill="white" letter-spacing="1">PDF</text>
+  <line x1="22" y1="63" x2="60" y2="63" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="22" y1="72" x2="52" y2="72" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Settings gear (solid white, 8 teeth, evenodd for center hole) -->
+  <!-- Positioned bottom-right overlapping doc corner -->
+  <path transform="translate(70,70) scale(1.85)"
+        fill-rule="evenodd"
+        fill="white"
+        d="M 9.7815,-2.0791 L 13.6941,-2.9108 A 14,14 0 0,1 13.6941,2.9108 L 9.7815,2.0791 A 10,10 0 0,1 8.3867,5.4464 L 11.7414,7.6249 A 14,14 0 0,1 7.6249,11.7414 L 5.4464,8.3867 A 10,10 0 0,1 2.0791,9.7815 L 2.9108,13.6941 A 14,14 0 0,1 -2.9108,13.6941 L -2.0791,9.7815 A 10,10 0 0,1 -5.4464,8.3867 L -7.6249,11.7414 A 14,14 0 0,1 -11.7414,7.6249 L -8.3867,5.4464 A 10,10 0 0,1 -9.7815,2.0791 L -13.6941,2.9108 A 14,14 0 0,1 -13.6941,-2.9108 L -9.7815,-2.0791 A 10,10 0 0,1 -8.3867,-5.4464 L -11.7414,-7.6249 A 14,14 0 0,1 -7.6249,-11.7414 L -5.4464,-8.3867 A 10,10 0 0,1 -2.0791,-9.7815 L -2.9108,-13.6941 A 14,14 0 0,1 2.9108,-13.6941 L 2.0791,-9.7815 A 10,10 0 0,1 5.4464,-8.3867 L 7.6249,-11.7414 A 14,14 0 0,1 11.7414,-7.6249 L 8.3867,-5.4464 A 10,10 0 0,1 9.7815,-2.0791 Z M 5.0000,0.0000 A 5,5 0 1,0 -5.0000,0.0000 A 5,5 0 1,0 5.0000,0.0000 Z"/>
+
+</svg>

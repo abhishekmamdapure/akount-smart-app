@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import shared from './auth.module.css'
 import s from './CreatePasswordPage.module.css'
+import { workspaceRoutes } from '../workspaceRoutes'
 
 function EyeIcon({ open }) {
   return open ? (
@@ -69,7 +70,7 @@ export default function CreatePasswordPage() {
     } else {
       // Clear signup session data
       sessionStorage.removeItem('signup_email')
-      navigate('/dashboard') // change to your post-registration route
+      navigate(workspaceRoutes.home)
     }
   }
 

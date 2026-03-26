@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { trackAuthEvent } from '../lib/authAnalytics'
 import { supabase } from '../supabase'
+import { workspaceRoutes } from '../workspaceRoutes'
 import shared from './auth.module.css'
 import s from './LoginPage.module.css'
 
@@ -452,7 +453,7 @@ export default function LoginPage() {
       recaptcha_token_present: Boolean(recaptchaToken),
     })
 
-    navigate('/dashboard')
+    navigate(workspaceRoutes.home)
   }
 
   return (

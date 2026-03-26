@@ -1,0 +1,712 @@
+.clientPage {
+  --client-toolbar-offset: 72px;
+  --client-card-columns: 1;
+  --client-surface-border: rgba(96, 111, 140, 0.12);
+  --client-input-border: rgba(96, 111, 140, 0.14);
+  --client-shadow: 0 22px 54px rgba(16, 26, 44, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.stickyToolbar {
+  position: sticky;
+  top: var(--client-toolbar-offset);
+  z-index: 6;
+}
+
+.toolbarSurface {
+  border-radius: 28px;
+  padding: 22px 24px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(236, 243, 255, 0.78));
+  backdrop-filter: blur(18px);
+  box-shadow: var(--client-shadow), inset 0 0 0 1px var(--client-surface-border);
+}
+
+.toolbarTopRow,
+.toolbarTitleRow,
+.toolbarActions,
+.resultsBar,
+.statusActions,
+.clientCardHeader,
+.clientCardFooter,
+.clientCardActions,
+.paginationRow,
+.paginationButtons,
+.modalHeader,
+.modalHeaderContent,
+.phoneField,
+.modalFooter,
+.confirmHeader,
+.confirmActions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.toolbarTopRow,
+.resultsBar,
+.clientCardFooter,
+.paginationRow,
+.modalHeader,
+.confirmHeader,
+.confirmActions {
+  justify-content: space-between;
+}
+
+.toolbarTopRow {
+  align-items: flex-start;
+}
+
+.toolbarLabel,
+.modalBadge,
+.dialogEyebrow,
+.fieldLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.toolbarLabel,
+.fieldLabel {
+  color: #6e7b90;
+}
+
+.modalBadge,
+.dialogEyebrow {
+  color: var(--color-primary-strong);
+}
+
+.toolbarTitle,
+.modalTitle,
+.confirmTitle,
+.statusTitle,
+.clientName {
+  letter-spacing: -0.04em;
+  color: var(--color-text);
+}
+
+.toolbarTitle {
+  font-size: clamp(1.8rem, 3vw, 2.35rem);
+  font-weight: 700;
+}
+
+.toolbarBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(49, 94, 251, 0.12);
+  color: var(--color-primary-strong);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.toolbarCopy,
+.resultsCopy,
+.statusText,
+.modalText,
+.fieldHint,
+.confirmText {
+  line-height: 1.6;
+  color: var(--color-text-soft);
+}
+
+.toolbarCopy {
+  margin-top: 8px;
+  max-width: 42rem;
+  font-size: 0.95rem;
+}
+
+.toolbarActions {
+  flex: 1;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.filterField {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: min(100%, 20rem);
+  flex: 1 1 20rem;
+  padding: 0 14px;
+  border-radius: 18px;
+  background: rgba(246, 249, 255, 0.9);
+  box-shadow: inset 0 0 0 1px var(--client-input-border);
+  color: var(--color-text-soft);
+}
+
+.filterInput,
+.fieldInput {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+}
+
+.filterInput {
+  min-width: 0;
+  padding: 13px 0;
+}
+
+.filterInput::placeholder,
+.fieldInput::placeholder {
+  color: #8f9bb1;
+}
+
+.filterInput:focus,
+.fieldInput:focus {
+  outline: none;
+}
+
+.primaryButton,
+.secondaryButton,
+.ghostButton,
+.dangerButton,
+.iconActionButton,
+.pageButton,
+.modalCloseButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  cursor: pointer;
+  transition: transform 160ms ease, background-color 160ms ease, color 160ms ease, opacity 160ms ease;
+}
+
+.primaryButton,
+.secondaryButton,
+.ghostButton,
+.dangerButton,
+.pageButton {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 16px;
+  font-weight: 700;
+}
+
+.primaryButton {
+  background: linear-gradient(135deg, var(--color-primary-strong), #4365f1);
+  color: #fff;
+  box-shadow: 0 16px 30px rgba(49, 94, 251, 0.18);
+}
+
+.secondaryButton {
+  background: #1f2a3f;
+  color: #fff;
+}
+
+.ghostButton,
+.pageButton {
+  background: rgba(245, 248, 252, 0.92);
+  color: var(--color-text);
+  box-shadow: inset 0 0 0 1px var(--client-input-border);
+}
+
+.dangerButton {
+  background: rgba(214, 74, 74, 0.12);
+  color: #a53434;
+}
+
+.primaryButton:hover,
+.secondaryButton:hover,
+.ghostButton:hover,
+.dangerButton:hover,
+.iconActionButton:hover,
+.pageButton:hover,
+.modalCloseButton:hover {
+  transform: translateY(-1px);
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled,
+.ghostButton:disabled,
+.dangerButton:disabled,
+.iconActionButton:disabled,
+.pageButton:disabled,
+.modalCloseButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+}
+
+.resultsBar {
+  margin-top: 16px;
+  border-radius: 20px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: inset 0 0 0 1px rgba(96, 111, 140, 0.1);
+}
+
+.resultsCopy {
+  font-size: 0.9rem;
+}
+
+.resultsMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.queryBadge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: rgba(49, 94, 251, 0.12);
+  color: var(--color-primary-strong);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.statusPanel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border-radius: 26px;
+  padding: 24px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 251, 255, 0.94));
+  box-shadow: inset 0 0 0 1px var(--client-surface-border);
+}
+
+.statusBody {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.statusIcon,
+.confirmIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border-radius: 18px;
+}
+
+.statusIcon {
+  width: 50px;
+  height: 50px;
+  background: rgba(49, 94, 251, 0.1);
+  color: var(--color-primary-strong);
+}
+
+.statusTitle {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.statusText {
+  margin-top: 8px;
+  max-width: 42rem;
+}
+
+.statusError {
+  color: var(--color-danger);
+}
+
+.clientGrid {
+  display: grid;
+  grid-template-columns: repeat(var(--client-card-columns), minmax(0, 1fr));
+  gap: 20px;
+  align-items: stretch;
+  grid-auto-rows: 1fr;
+}
+
+.clientCardHeader {
+  align-items: flex-start;
+}
+
+.clientCardFooter {
+  margin-top: auto;
+}
+
+.clientCard {
+  display: flex;
+  height: 100%;
+  min-height: 13.5rem;
+  flex-direction: column;
+  gap: 16px;
+  border-radius: 26px;
+  padding: 22px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 250, 255, 0.95));
+  box-shadow: inset 0 0 0 1px var(--client-surface-border);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.clientCard:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--client-shadow), inset 0 0 0 1px rgba(96, 111, 140, 0.1);
+}
+
+.clientAvatar {
+  flex: 0 0 52px;
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  min-height: 52px;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--client-avatar-background);
+  color: var(--client-avatar-foreground);
+  font-size: 0.96rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.clientIdentity {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.clientName {
+  font-size: 1.12rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.clientMeta {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: var(--color-text-soft);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.clientDateValue {
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1;
+}
+
+.clientCardActions {
+  justify-content: flex-end;
+}
+
+.iconActionButton,
+.modalCloseButton {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: rgba(245, 248, 252, 0.92);
+  color: var(--color-text);
+  box-shadow: inset 0 0 0 1px var(--client-input-border);
+}
+
+.iconActionButtonDanger {
+  color: #b33c3c;
+}
+
+.paginationRow {
+  padding: 4px 4px 0;
+}
+
+.paginationCopy {
+  font-size: 0.88rem;
+  color: var(--color-text-soft);
+}
+
+.paginationButtons {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.activePageButton {
+  background: linear-gradient(135deg, var(--color-primary-strong), #4365f1);
+  color: #fff;
+  box-shadow: none;
+}
+
+.modalScrim {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(10, 18, 32, 0.48);
+  backdrop-filter: blur(10px);
+}
+
+.clientModal,
+.confirmDialog {
+  width: min(960px, 100%);
+  max-height: min(92vh, 56rem);
+  overflow: auto;
+  border-radius: 30px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(244, 248, 255, 0.96));
+  box-shadow: 0 34px 80px rgba(10, 18, 32, 0.24), inset 0 0 0 1px rgba(96, 111, 140, 0.1);
+}
+
+.clientModal {
+  padding: 28px;
+}
+
+.modalHeader {
+  align-items: flex-start;
+}
+
+.modalHeaderContent {
+  align-items: flex-start;
+}
+
+.modalHeaderText {
+  flex: 1;
+  min-width: 0;
+}
+
+.modalBadge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 7px 11px;
+  background: rgba(49, 94, 251, 0.1);
+}
+
+.modalTitle {
+  margin-top: 12px;
+  font-size: clamp(1.6rem, 2.6vw, 2.2rem);
+  font-weight: 700;
+}
+
+.modalText {
+  margin-top: 10px;
+  max-width: 42rem;
+}
+
+.clientForm {
+  margin-top: 24px;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fieldWide {
+  grid-column: span 2;
+}
+
+.fieldInput,
+.phonePrefix {
+  min-height: 48px;
+  border-radius: 18px;
+  padding: 0 16px;
+  background: rgba(245, 248, 252, 0.92);
+  box-shadow: inset 0 0 0 1px var(--client-input-border);
+}
+
+.fieldInput:focus {
+  box-shadow: inset 0 0 0 1px rgba(49, 94, 251, 0.35), 0 0 0 3px rgba(49, 94, 251, 0.12);
+}
+
+.fieldHint {
+  font-size: 0.8rem;
+}
+
+.phoneField {
+  gap: 10px;
+}
+
+.phonePrefix {
+  min-width: 70px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: var(--color-text-soft);
+}
+
+.addressGrid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.addressLineField {
+  grid-column: 1 / -1;
+}
+
+.addressMetaField {
+  grid-column: span 2;
+}
+
+.modalError {
+  margin-top: 18px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--color-danger);
+}
+
+.modalFooter {
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.confirmDialog {
+  width: min(480px, 100%);
+  max-height: none;
+  padding: 24px;
+}
+
+.confirmIcon {
+  width: 46px;
+  height: 46px;
+  background: rgba(214, 74, 74, 0.12);
+  color: var(--color-danger);
+}
+
+.confirmIconSuccess {
+  background: rgba(17, 154, 99, 0.14);
+  color: var(--color-success);
+}
+
+.confirmTitle {
+  margin-top: 8px;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.confirmText {
+  margin-top: 16px;
+  font-size: 0.95rem;
+}
+
+@media (min-width: 960px) {
+  .clientPage {
+    --client-toolbar-offset: 80px;
+    --client-card-columns: 2;
+  }
+}
+
+@media (min-width: 1180px) {
+  .clientPage {
+    --client-card-columns: 3;
+  }
+}
+
+@media (min-width: 1480px) {
+  .clientPage {
+    --client-card-columns: 4;
+  }
+}
+
+@media (max-width: 840px) {
+  .toolbarTopRow,
+  .resultsBar,
+  .statusPanel,
+  .modalHeader,
+  .confirmHeader,
+  .confirmActions,
+  .paginationRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toolbarActions,
+  .paginationButtons {
+    justify-content: flex-start;
+  }
+
+  .clientModal {
+    padding: 22px;
+  }
+
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .fieldWide {
+    grid-column: span 1;
+  }
+
+  .addressGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .addressLineField,
+  .addressMetaField {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 680px) {
+  .clientPage {
+    gap: 16px;
+  }
+
+  .toolbarSurface,
+  .statusPanel,
+  .clientCard,
+  .clientModal,
+  .confirmDialog {
+    border-radius: 24px;
+  }
+
+  .toolbarSurface,
+  .statusPanel,
+  .clientCard,
+  .confirmDialog {
+    padding: 18px;
+  }
+
+  .resultsBar {
+    padding: 12px 14px;
+  }
+
+  .toolbarTitle {
+    font-size: 1.7rem;
+  }
+
+  .toolbarActions {
+    width: 100%;
+  }
+
+  .filterField {
+    min-width: 100%;
+  }
+
+  .primaryButton,
+  .secondaryButton,
+  .ghostButton,
+  .dangerButton,
+  .pageButton {
+    width: 100%;
+  }
+
+  .paginationButtons {
+    width: 100%;
+  }
+
+  .paginationButtons .pageButton {
+    flex: 1 1 calc(50% - 8px);
+  }
+
+  .clientCardHeader,
+  .clientCardFooter {
+    align-items: flex-start;
+  }
+}

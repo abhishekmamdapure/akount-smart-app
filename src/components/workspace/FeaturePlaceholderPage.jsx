@@ -3,6 +3,7 @@ import styles from './Workspace.module.css'
 import WorkspaceIcon from './WorkspaceIcon'
 import ToolPageHeader from './tools/shared/ToolPageHeader'
 import { useWorkspaceToolClient } from './tools/shared/toolClientState'
+import { workspaceRoutes } from '../../workspaceRoutes'
 
 function joinClasses(...values) {
   return values.filter(Boolean).join(' ')
@@ -35,10 +36,10 @@ export default function FeaturePlaceholderPage({
         <ToolPageHeader
           action={
             <div className={styles.placeholderActions}>
-              <Link className={styles.gradientButton} to="/dashboard/clients">
+              <Link className={styles.gradientButton} to={workspaceRoutes.clients}>
                 Open Clients Management
               </Link>
-              <Link className={styles.ghostButton} to="/dashboard">
+              <Link className={styles.ghostButton} to={workspaceRoutes.home}>
                 Back to Dashboard
               </Link>
             </div>
@@ -86,10 +87,10 @@ export default function FeaturePlaceholderPage({
           </div>
 
           <div className={styles.placeholderActions}>
-            <Link className={styles.gradientButton} to="/dashboard/clients">
+            <Link className={styles.gradientButton} to={workspaceRoutes.clients}>
               Open Clients Management
             </Link>
-            <Link className={styles.ghostButton} to="/dashboard">
+            <Link className={styles.ghostButton} to={workspaceRoutes.home}>
               Back to Dashboard
             </Link>
           </div>

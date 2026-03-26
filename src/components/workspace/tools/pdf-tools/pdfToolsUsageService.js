@@ -1,6 +1,6 @@
 import { buildWorkspaceUserHeaders } from '../shared/toolClientState'
 
-const toolKeys = ['split_merge', 'reorder_delete', 'page_numbers', 'watermark', 'to_word', 'to_excel']
+const toolKeys = ['split_merge', 'reorder_delete', 'page_numbers', 'watermark', 'to_word', 'to_excel', 'compress_pdf']
 
 export const EMPTY_PDF_TOOL_TOTALS = Object.freeze(
   toolKeys.reduce((acc, tool) => {
@@ -17,6 +17,7 @@ function cloneDefaultTotals() {
     watermark: 0,
     to_word: 0,
     to_excel: 0,
+    compress_pdf: 0,
   }
 }
 

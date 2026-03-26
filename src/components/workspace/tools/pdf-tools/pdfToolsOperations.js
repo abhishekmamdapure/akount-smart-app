@@ -1,6 +1,18 @@
+import {
+  PAGE_NUMBER_DEFAULTS,
+  buildPageNumberText,
+  resolvePageNumberRange,
+  validatePageNumberColor,
+  validatePageNumberFontSize,
+  validatePageNumberRange,
+  validatePageNumberStartFrom,
+} from './pageNumbersHelpers'
+import { calculatePdfCompressionStats, getPdfCompressionPreset } from './pdfCompressionHelpers'
+
 const SCRIPT_LOADERS = new Map()
 
 const TOOL_LABELS = Object.freeze({
+  compress_pdf: 'Compress PDF',
   split_merge: 'Split / Merge',
   reorder_delete: 'Reorder / Delete',
   page_numbers: 'Page Numbers',
@@ -382,24 +394,56 @@ export async function reorderAndDeletePdf(file, { orderedPageNumbers = [] } = {}
   }
 }
 
-function buildPageNumberText(format, pageNumber, totalPages) {
-  if (format === 'page_n_of_total') {
-    return `Page ${pageNumber} of ${totalPages}`
-  }
-
-  if (format === 'dash_n_dash') {
-    return `- ${pageNumber} -`
-  }
-
-  return `${pageNumber}`
-}
-
 function parseSkipPages(skipPagesInput, totalPages) {
   if (!String(skipPagesInput || '').trim()) {
     return new Set()
   }
 
   return new Set(parseIntegerList(skipPagesInput, { min: 1, max: totalPages }))
+}
+
+function getPageNumberCoordinates({ position, width, height, textWidth, fontSize }) {
+  const margin = PAGE_NUMBER_DEFAULTS.outputMargin
+
+  if (position === 'bottom_right') {
+    return {
+      x: width - textWidth - margin,
+      y: margin,
+    }
+  }
+
+  if (position === 'bottom_left') {
+    return {
+      x: margin,
+      y: margin,
+    }
+  }
+
+  if (position === 'top_center') {
+    return {
+      x: (width - textWidth) / 2,
+      y: height - fontSize - margin,
+    }
+  }
+
+  if (position === 'top_right') {
+    return {
+      x: width - textWidth - margin,
+      y: height - fontSize - margin,
+    }
+  }
+
+  if (position === 'top_left') {
+    return {
+      x: margin,
+      y: height - fontSize - margin,
+    }
+  }
+
+  return {
+    x: (width - textWidth) / 2,
+    y: margin,
+  }
 }
 
 export async function addPageNumbersToPdf(file, options = {}) {
@@ -409,44 +453,68 @@ export async function addPageNumbersToPdf(file, options = {}) {
   const doc = await PDFDocument.load(bytes)
   const pages = doc.getPages()
   const totalPages = pages.length
-  const startFrom = Number(options.startFrom) || 1
-  const fontSize = Number(options.fontSize) || 12
-  const position = options.position || 'bottom_center'
+  const startFromError = validatePageNumberStartFrom(options.startFrom ?? PAGE_NUMBER_DEFAULTS.startFrom)
+  const fontSizeError = validatePageNumberFontSize(options.fontSize ?? PAGE_NUMBER_DEFAULTS.fontSize)
+  const fontColorValue = options.fontColor ?? PAGE_NUMBER_DEFAULTS.fontColor
+  const fontColorError = validatePageNumberColor(fontColorValue)
+  const pageRangeError = validatePageNumberRange(options.pageRangeStart, options.pageRangeEnd, totalPages)
+
+  if (startFromError) {
+    throw new Error(startFromError)
+  }
+
+  if (fontSizeError) {
+    throw new Error(fontSizeError)
+  }
+
+  if (fontColorError) {
+    throw new Error(fontColorError)
+  }
+
+  if (pageRangeError) {
+    throw new Error(pageRangeError)
+  }
+
+  const startFrom = Number.parseInt(options.startFrom ?? PAGE_NUMBER_DEFAULTS.startFrom, 10)
+  const fontSize = Number.parseInt(options.fontSize ?? PAGE_NUMBER_DEFAULTS.fontSize, 10)
+  const position = options.position || PAGE_NUMBER_DEFAULTS.position
   const skipPages = parseSkipPages(options.skipPagesInput, totalPages)
+  const pageRange = resolvePageNumberRange(options.pageRangeStart, options.pageRangeEnd, totalPages)
+  const targetPages = pages
+    .map((_, index) => index + 1)
+    .filter((pageNumber) => pageNumber >= pageRange.start && pageNumber <= pageRange.end && !skipPages.has(pageNumber))
   const font = await doc.embedFont(StandardFonts.Helvetica)
+  const color = parseColorHexToRgb(fontColorValue)
+
+  if (targetPages.length === 0) {
+    throw new Error('No pages matched the selected range and skip settings.')
+  }
+
+  const targetPageSet = new Set(targetPages)
+  const numberingTotal = startFrom + targetPages.length - 1
+  let numberedCount = 0
 
   pages.forEach((page, index) => {
     const renderedPage = index + 1
 
-    if (skipPages.has(renderedPage)) {
+    if (!targetPageSet.has(renderedPage)) {
       return
     }
 
-    const text = buildPageNumberText(options.format || 'numeric', startFrom + index, totalPages)
+    const text = buildPageNumberText(options.format || PAGE_NUMBER_DEFAULTS.format, startFrom + numberedCount, numberingTotal)
     const { width, height } = page.getSize()
     const textWidth = font.widthOfTextAtSize(text, fontSize)
-    const margin = 24
-    let x = margin
-    let y = margin
-
-    if (position === 'bottom_center') {
-      x = (width - textWidth) / 2
-      y = margin
-    } else if (position === 'bottom_right') {
-      x = width - textWidth - margin
-      y = margin
-    } else if (position === 'top_center') {
-      x = (width - textWidth) / 2
-      y = height - fontSize - margin
-    }
+    const { x, y } = getPageNumberCoordinates({ position, width, height, textWidth, fontSize })
 
     page.drawText(text, {
       x,
       y,
       size: fontSize,
       font,
-      color: rgb(0.2, 0.2, 0.2),
+      color: rgb(color.r, color.g, color.b),
     })
+
+    numberedCount += 1
   })
 
   const baseName = sanitizeFileBase(file.name, 'numbered')
@@ -454,7 +522,7 @@ export async function addPageNumbersToPdf(file, options = {}) {
   return {
     fileName: `${baseName}-numbered.pdf`,
     bytes: await doc.save(),
-    summary: `added page numbers to ${totalPages} pages`,
+    summary: `added page numbers to ${targetPages.length} pages`,
   }
 }
 
@@ -595,6 +663,41 @@ async function imageFileToPngBytes(file, grayscale = false) {
   })
 }
 
+function applyCanvasGrayscale(context, width, height) {
+  const imageData = context.getImageData(0, 0, width, height)
+
+  for (let index = 0; index < imageData.data.length; index += 4) {
+    const grey = Math.round(
+      0.299 * imageData.data[index] +
+        0.587 * imageData.data[index + 1] +
+        0.114 * imageData.data[index + 2],
+    )
+    imageData.data[index] = grey
+    imageData.data[index + 1] = grey
+    imageData.data[index + 2] = grey
+  }
+
+  context.putImageData(imageData, 0, 0)
+}
+
+async function canvasToJpegBytes(canvas, quality) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      async (blob) => {
+        if (!blob) {
+          reject(new Error('Unable to encode the compressed PDF page preview.'))
+          return
+        }
+
+        const arrayBuffer = await blob.arrayBuffer()
+        resolve(new Uint8Array(arrayBuffer))
+      },
+      'image/jpeg',
+      quality,
+    )
+  })
+}
+
 export async function addImageWatermarkToPdf(file, options = {}) {
   if (!options.imageFile) {
     throw new Error('Select a watermark image to continue.')
@@ -638,6 +741,88 @@ export async function addImageWatermarkToPdf(file, options = {}) {
     fileName: `${baseName}-watermark.pdf`,
     bytes: await doc.save(),
     summary: 'applied image watermark',
+  }
+}
+
+export async function compressPdfFile(file, options = {}) {
+  const preset = getPdfCompressionPreset(options.preset)
+  const pdfLib = await getPdfLib()
+  const pdfjsLib = await getPdfJs()
+  const { PDFDocument } = pdfLib
+  const sourceBytes = await fileToUint8Array(file)
+  const loadingTask = pdfjsLib.getDocument({ data: sourceBytes })
+  const pdf = await loadingTask.promise
+  const outputDoc = await PDFDocument.create()
+  const onProgress = typeof options.onProgress === 'function' ? options.onProgress : () => {}
+  const grayscale = Boolean(options.grayscale)
+
+  try {
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+      onProgress({ page: pageNumber, total: pdf.numPages })
+
+      const page = await pdf.getPage(pageNumber)
+      const viewport = page.getViewport({ scale: preset.renderScale })
+      const [x1, y1, x2, y2] = page.view
+      const pageWidth = Math.max(1, x2 - x1)
+      const pageHeight = Math.max(1, y2 - y1)
+      const canvas = document.createElement('canvas')
+      const context = canvas.getContext('2d', { alpha: false })
+
+      canvas.width = Math.max(1, Math.round(viewport.width))
+      canvas.height = Math.max(1, Math.round(viewport.height))
+
+      if (!context) {
+        throw new Error('Unable to render PDF page for compression.')
+      }
+
+      context.fillStyle = '#ffffff'
+      context.fillRect(0, 0, canvas.width, canvas.height)
+
+      await page.render({ canvasContext: context, viewport }).promise
+
+      if (grayscale) {
+        applyCanvasGrayscale(context, canvas.width, canvas.height)
+      }
+
+      const imageBytes = await canvasToJpegBytes(canvas, preset.imageQuality)
+      const image = await outputDoc.embedJpg(imageBytes)
+      const outputPage = outputDoc.addPage([pageWidth, pageHeight])
+
+      outputPage.drawImage(image, {
+        height: pageHeight,
+        width: pageWidth,
+        x: 0,
+        y: 0,
+      })
+
+      page.cleanup?.()
+    }
+  } finally {
+    if (pdf.destroy) {
+      pdf.destroy()
+    }
+  }
+
+  const compressedBytes = await outputDoc.save({ useObjectStreams: true })
+  const originalSize = sourceBytes.length
+  const compressedSize = compressedBytes.length
+  const shouldKeepCompressedOutput = compressedSize < originalSize
+  const finalBytes = shouldKeepCompressedOutput ? compressedBytes : sourceBytes
+  const stats = calculatePdfCompressionStats(originalSize, finalBytes.length)
+  const baseName = sanitizeFileBase(file.name, 'document')
+  const presetLabel = preset.label.toLowerCase()
+  const summary = stats.wasReduced
+    ? `compressed ${pdf.numPages} pages using ${presetLabel}${grayscale ? ' with grayscale' : ''}; ${stats.reductionPercent}% smaller (${formatFileSize(originalSize)} to ${formatFileSize(finalBytes.length)})`
+    : `processed ${pdf.numPages} pages using ${presetLabel}${grayscale ? ' with grayscale' : ''}; the original file was already the smaller copy`
+
+  return {
+    bytes: finalBytes,
+    fileName: `${baseName}-compressed.pdf`,
+    originalSize,
+    outputSize: finalBytes.length,
+    reductionPercent: stats.reductionPercent,
+    summary,
+    wasReduced: stats.wasReduced,
   }
 }
 

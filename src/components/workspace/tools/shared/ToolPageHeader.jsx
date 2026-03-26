@@ -1,6 +1,6 @@
 import workspaceStyles from '../../Workspace.module.css'
-import ClientSelectionDropdown from './ClientSelectionDropdown'
 import styles from './Tools.module.css'
+import ToolClientSelector from './ToolClientSelector'
 
 function joinClasses(...values) {
   return values.filter(Boolean).join(' ')
@@ -36,7 +36,7 @@ export default function ToolPageHeader({
         <aside className={styles.toolHeroCorner}>
           <div className={styles.toolHeroCornerTop}>
             <span className={styles.toolHeroCornerLabel}>Client selector</span>
-            <ClientSelectionDropdown compact menuAlign="end" {...clientPicker} />
+            <ToolClientSelector fullWidth {...clientPicker} />
           </div>
 
           <div

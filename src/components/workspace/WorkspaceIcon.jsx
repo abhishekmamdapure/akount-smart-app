@@ -1,3 +1,5 @@
+import { resolveWorkspaceIconAsset } from './workspaceIconAssets'
+
 function Svg({ children, size = 20, className = '' }) {
   return (
     <svg
@@ -18,6 +20,24 @@ function Svg({ children, size = 20, className = '' }) {
 }
 
 export default function WorkspaceIcon({ name, size = 20, className = '' }) {
+  const assetPath = resolveWorkspaceIconAsset(name)
+
+  if (assetPath) {
+    return (
+      <img
+        alt=""
+        aria-hidden="true"
+        className={className}
+        decoding="async"
+        draggable="false"
+        height={size}
+        src={assetPath}
+        style={{ display: 'block', height: size, objectFit: 'contain', width: size }}
+        width={size}
+      />
+    )
+  }
+
   switch (name) {
     case 'dashboard':
       return (
@@ -118,6 +138,22 @@ export default function WorkspaceIcon({ name, size = 20, className = '' }) {
           <path d="m20 20-3.2-3.2" />
         </Svg>
       )
+    case 'eye':
+      return (
+        <Svg className={className} size={size}>
+          <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+          <circle cx="12" cy="12" r="2.8" />
+        </Svg>
+      )
+    case 'eyeOff':
+      return (
+        <Svg className={className} size={size}>
+          <path d="M3 3 21 21" />
+          <path d="M10.7 5.2A10.6 10.6 0 0 1 12 5c6 0 9.5 7 9.5 7a17.7 17.7 0 0 1-4 4.6" />
+          <path d="M6.2 6.3A18.2 18.2 0 0 0 2.5 12s3.5 6 9.5 6c1.4 0 2.8-.3 4-.8" />
+          <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+        </Svg>
+      )
     case 'bell':
       return (
         <Svg className={className} size={size}>
@@ -136,6 +172,15 @@ export default function WorkspaceIcon({ name, size = 20, className = '' }) {
         <Svg className={className} size={size}>
           <path d="M12 5v14" />
           <path d="M5 12h14" />
+        </Svg>
+      )
+    case 'scissors':
+      return (
+        <Svg className={className} size={size}>
+          <circle cx="6.5" cy="7" r="2.5" />
+          <circle cx="6.5" cy="17" r="2.5" />
+          <path d="M8.6 8.8 19 19" />
+          <path d="M8.6 15.2 19 5" />
         </Svg>
       )
     case 'mail':
@@ -213,6 +258,13 @@ export default function WorkspaceIcon({ name, size = 20, className = '' }) {
         <Svg className={className} size={size}>
           <path d="M5 12h14" />
           <path d="m13 6 6 6-6 6" />
+        </Svg>
+      )
+    case 'arrowUpRight':
+      return (
+        <Svg className={className} size={size}>
+          <path d="M8 16 16 8" />
+          <path d="M9 8h7v7" />
         </Svg>
       )
     case 'check':

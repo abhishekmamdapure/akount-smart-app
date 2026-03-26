@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import LandingPage from './components/LandingPage'
 import LoginPage from './components/LoginPage'
 import SignupPage from './components/SignupPage'
@@ -12,8 +12,21 @@ import FeaturePlaceholderPage from './components/workspace/FeaturePlaceholderPag
 import TallyXmlConverterPage from './components/workspace/TallyXmlConverterPage'
 import WorkspaceLayout from './components/workspace/WorkspaceLayout'
 import InvoiceProcessingPage from './components/workspace/tools/invoice-processing/InvoiceProcessingPage'
+import PasswordManagerPage from './components/workspace/tools/password-manager/PasswordManagerPage'
 import GstReconciliationPage from './components/workspace/tools/gst-reconciliation/GstReconciliationPage'
 import PdfToolsPage from './components/workspace/tools/pdf-tools/PdfToolsPage'
+import { buildLegacyDashboardRedirectTarget, workspaceRoutes } from './workspaceRoutes'
+
+function LegacyDashboardRedirect() {
+  const location = useLocation()
+  const nextPath = buildLegacyDashboardRedirectTarget(location.pathname, location.search, location.hash)
+
+  return <Navigate replace to={nextPath} />
+}
+
+function getWorkspaceRouteSegment(path) {
+  return String(path || '').replace(/^\//, '')
+}
 
 export default function App() {
   return (
@@ -25,10 +38,10 @@ export default function App() {
         <Route path="/verify-otp" element={<OtpPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/create-password" element={<CreatePasswordPage />} />
-        <Route path="/dashboard" element={<WorkspaceLayout />}>
-          <Route index element={<DashboardComingSoonPage />} />
+        <Route path="/" element={<WorkspaceLayout />}>
+          <Route path={getWorkspaceRouteSegment(workspaceRoutes.home)} element={<DashboardComingSoonPage />} />
           <Route
-            path="accounting"
+            path={getWorkspaceRouteSegment(workspaceRoutes.accounting)}
             element={
               <FeaturePlaceholderPage
                 description="Structure invoice review, ledger cleanup, and high-volume posting in one accounting workspace."
@@ -54,47 +67,33 @@ export default function App() {
               />
             }
           />
-          <Route path="invoice-processing" element={<InvoiceProcessingPage />} />
-          <Route path="tally-xml-converter" element={<TallyXmlConverterPage />} />
-          <Route path="gst-reconciliation" element={<GstReconciliationPage />} />
-          <Route path="reconciliation-2b" element={<Navigate replace to="/dashboard/gst-reconciliation?type=2b" />} />
-          <Route path="reconciliation-4a" element={<Navigate replace to="/dashboard/gst-reconciliation?type=4a" />} />
-          <Route path="clients" element={<ClientsPage />} />
-          <Route path="account-settings" element={<Navigate replace to="/dashboard/settings" />} />
+          <Route path={getWorkspaceRouteSegment(workspaceRoutes.invoiceProcessing)} element={<InvoiceProcessingPage />} />
+          <Route path={getWorkspaceRouteSegment(workspaceRoutes.tallyXmlConverter)} element={<TallyXmlConverterPage />} />
+          <Route path={getWorkspaceRouteSegment(workspaceRoutes.gstReconciliation)} element={<GstReconciliationPage />} />
           <Route
-            path="pdf-tools"
+            path={getWorkspaceRouteSegment(workspaceRoutes.reconciliation2b)}
+            element={<Navigate replace to={`${workspaceRoutes.gstReconciliation}?type=2b`} />}
+          />
+          <Route
+            path={getWorkspaceRouteSegment(workspaceRoutes.reconciliation4a)}
+            element={<Navigate replace to={`${workspaceRoutes.gstReconciliation}?type=4a`} />}
+          />
+          <Route path={getWorkspaceRouteSegment(workspaceRoutes.clients)} element={<ClientsPage />} />
+          <Route
+            path={getWorkspaceRouteSegment(workspaceRoutes.accountSettings)}
+            element={<Navigate replace to={workspaceRoutes.settings} />}
+          />
+          <Route
+            path={getWorkspaceRouteSegment(workspaceRoutes.pdfTools)}
             element={<PdfToolsPage />}
           />
           <Route
-            path="password-manager"
-            element={
-              <FeaturePlaceholderPage
-                description="Store portal credentials, OTP routines, and owner assignments in one governed vault."
-                eyebrow="Access control"
-                highlights={[
-                  {
-                    icon: 'password',
-                    title: 'Credential vault',
-                    copy: 'Organize credentials per entity, portal, and owner with rotation reminders.',
-                  },
-                  {
-                    icon: 'clients',
-                    title: 'Entity linking',
-                    copy: 'Connect access records directly to clients and filing cycles so context is never lost.',
-                  },
-                  {
-                    icon: 'check',
-                    title: 'Approval flow',
-                    copy: 'Define who can reveal, edit, or rotate passwords based on team role.',
-                  },
-                ]}
-                title="Password Manager"
-              />
-            }
+            path={getWorkspaceRouteSegment(workspaceRoutes.passwordManager)}
+            element={<PasswordManagerPage />}
           />
-          <Route path="settings" element={<AccountSettingsPage />} />
+          <Route path={getWorkspaceRouteSegment(workspaceRoutes.settings)} element={<AccountSettingsPage />} />
           <Route
-            path="help"
+            path={getWorkspaceRouteSegment(workspaceRoutes.help)}
             element={
               <FeaturePlaceholderPage
                 clientContextEnabled={false}
@@ -122,6 +121,7 @@ export default function App() {
             }
           />
         </Route>
+        <Route path="/dashboard/*" element={<LegacyDashboardRedirect />} />
         <Route path="*" element={<Navigate replace to="/" />} />
       </Routes>
     </BrowserRouter>

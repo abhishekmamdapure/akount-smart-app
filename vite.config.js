@@ -24,6 +24,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/gst-reconciliation-proxy/, ''),
       },
+      '/password-manager-proxy': {
+        target: 'https://gst-tools-production.up.railway.app',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/password-manager-proxy/, ''),
+      },
     }
   }
 })

@@ -453,7 +453,10 @@ export default function LoginPage() {
       recaptcha_token_present: Boolean(recaptchaToken),
     })
 
-    navigate(workspaceRoutes.home)
+    // Redirect to the page the user originally intended to visit, or default
+    // to the dashboard if they navigated to /login directly.
+    const intendedPath = location.state?.from?.pathname || workspaceRoutes.home
+    navigate(intendedPath, { replace: true })
   }
 
   return (

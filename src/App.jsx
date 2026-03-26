@@ -5,6 +5,8 @@ import SignupPage from './components/SignupPage'
 import OtpPage from './components/OtpPage'
 import ForgotPasswordPage from './components/ForgotPasswordPage'
 import CreatePasswordPage from './components/CreatePasswordPage'
+import ProtectedRoute from './components/ProtectedRoute'
+import PublicOnlyRoute from './components/PublicOnlyRoute'
 import ClientsPage from './components/workspace/ClientsPage'
 import AccountSettingsPage from './components/workspace/AccountSettingsPage'
 import DashboardPage from './components/workspace/DashboardPage'
@@ -33,12 +35,12 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/login" element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />
+        <Route path="/signup" element={<PublicOnlyRoute><SignupPage /></PublicOnlyRoute>} />
         <Route path="/verify-otp" element={<OtpPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/create-password" element={<CreatePasswordPage />} />
-        <Route path="/" element={<WorkspaceLayout />}>
+        <Route path="/" element={<ProtectedRoute><WorkspaceLayout /></ProtectedRoute>}>
           <Route path={getWorkspaceRouteSegment(workspaceRoutes.home)} element={<DashboardPage />} />
           <Route
             path={getWorkspaceRouteSegment(workspaceRoutes.accounting)}

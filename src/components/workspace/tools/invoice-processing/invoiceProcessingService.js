@@ -1,7 +1,7 @@
 import { supabase } from '../../../../supabase'
 import { buildWorkspaceUserHeaders } from '../shared/toolClientState'
 
-const apiBaseUrl = import.meta.env.VITE_INVOICE_PROCESS_API_BASE_URL
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
 const devProxyBaseUrl = '/invoice-processing-proxy'
 
 function buildInvoiceProcessEndpoint(mode) {
@@ -239,7 +239,7 @@ export async function processInvoiceFile({ file, mode, selectedClient }) {
 
   if (!hasProcessingApi) {
     logInvoiceDebug('warn', requestId, 'Invoice-processing API base URL is not configured.')
-    throw new Error('Invoice-processing API is not configured. Set `VITE_INVOICE_PROCESS_API_BASE_URL` and try again.')
+    throw new Error('Invoice-processing API is not configured. Set `VITE_API_BASE_URL` and try again.')
   }
 
   try {

@@ -1,7 +1,7 @@
 import { supabase } from '../../../../supabase'
 import { buildWorkspaceUserHeaders } from '../shared/toolClientState'
 
-const apiBaseUrl = import.meta.env.VITE_TALLY_XML_API_BASE_URL
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
 const devProxyBaseUrl = '/tally-xml-proxy'
 
 function normalizeRelativePath(pathname = '') {
@@ -236,7 +236,7 @@ export async function downloadTallyTemplate() {
   })
 
   if (!hasTallyApi) {
-    throw new Error('Tally XML API is not configured. Set `VITE_TALLY_XML_API_BASE_URL` and try again.')
+    throw new Error('Tally XML API is not configured. Set `VITE_API_BASE_URL` and try again.')
   }
 
   const response = await fetch(endpoint, {
@@ -288,7 +288,7 @@ export async function processTallySourceFile({ file, preferences, selectedClient
 
   if (!hasTallyApi) {
     logTallyDebug('warn', requestId, 'Tally XML API base URL is not configured.')
-    throw new Error('Tally XML API is not configured. Set `VITE_TALLY_XML_API_BASE_URL` and try again.')
+    throw new Error('Tally XML API is not configured. Set `VITE_API_BASE_URL` and try again.')
   }
 
   try {

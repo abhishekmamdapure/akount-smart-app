@@ -1,7 +1,7 @@
 import { supabase } from '../../../../supabase'
 import { buildWorkspaceUserHeaders } from '../shared/toolClientState'
 
-const apiBaseUrl = import.meta.env.VITE_GST_RECONCILIATION_API_BASE_URL
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
 const devProxyBaseUrl = '/gst-reconciliation-proxy'
 
 function normalizeRelativePath(pathname = '') {
@@ -272,7 +272,7 @@ export async function processGstFiles({ draft, selectedClient, type }) {
 
   if (!hasProcessingApi) {
     logGstDebug('warn', requestId, 'GST reconciliation API base URL is not configured.')
-    throw new Error('GST reconciliation API is not configured. Set `VITE_GST_RECONCILIATION_API_BASE_URL` and try again.')
+    throw new Error('GST reconciliation API is not configured. Set `VITE_API_BASE_URL` and try again.')
   }
 
   try {

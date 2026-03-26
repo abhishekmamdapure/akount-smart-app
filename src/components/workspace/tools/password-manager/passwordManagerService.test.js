@@ -20,7 +20,7 @@ vi.mock('../shared/toolClientState', () => ({
 
 import { createPasswordVault, updatePasswordVault } from './passwordManagerService'
 
-function createJsonResponse(payload, { ok = true, url = 'https://gst-tools-production.up.railway.app' } = {}) {
+function createJsonResponse(payload, { ok = true, url = 'https://api.example.com' } = {}) {
   return {
     ok,
     text: async () => JSON.stringify(payload),

@@ -4,22 +4,6 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/invoice-processing-proxy/:match*",
-      "destination": "https://gst-tools-production.up.railway.app/:match*"
-    },
-    {
-      "source": "/tally-xml-proxy/:match*",
-      "destination": "https://gst-tools-production.up.railway.app/:match*"
-    },
-    {
-      "source": "/gst-reconciliation-proxy/:match*",
-      "destination": "https://gst-tools-production.up.railway.app/:match*"
-    },
-    {
-      "source": "/password-manager-proxy/:match*",
-      "destination": "https://gst-tools-production.up.railway.app/:match*"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

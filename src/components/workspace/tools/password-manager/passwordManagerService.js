@@ -7,9 +7,8 @@ import {
 } from './passwordManagerConstants'
 import { buildSectionOrder } from './passwordManagerHelpers'
 
-const DEFAULT_PASSWORD_MANAGER_API_BASE_URL = 'https://gst-tools-production.up.railway.app'
 const apiBaseUrl = String(
-  import.meta.env.VITE_PASSWORD_MANAGER_API_BASE_URL || DEFAULT_PASSWORD_MANAGER_API_BASE_URL,
+  import.meta.env.VITE_API_BASE_URL || '',
 ).trim().replace(/\/$/, '')
 const devProxyBaseUrl = '/password-manager-proxy'
 const passwordVaultCache = new Map()
@@ -190,7 +189,7 @@ function buildPasswordManagerHeaders(currentUser, { includeJsonContentType = fal
 function ensureConfiguredEndpoint() {
   if (!credentialsEndpoint) {
     throw new Error(
-      'Password Manager API is not configured. Set `VITE_PASSWORD_MANAGER_API_BASE_URL` and try again.',
+      'Password Manager API is not configured. Set `VITE_API_BASE_URL` and try again.',
     )
   }
 }

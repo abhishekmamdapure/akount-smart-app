@@ -1,4 +1,5 @@
 import express from 'express'
+import cors from 'cors'
 import { readFileSync } from 'fs'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
@@ -45,6 +46,11 @@ try {
 }
 
 const app = express()
+app.use(cors({
+  origin: '*', // We can allow all origins or specifically Vercel origins
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id', 'x-user-email', 'accept']
+}))
 app.use(express.json())
 
 function getOwnerFromHeaders(headers) {

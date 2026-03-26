@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
 import WorkspaceIcon from '../../WorkspaceIcon'
 import workspaceStyles from '../../Workspace.module.css'
+import { getClientAvatarTone, getClientInitials } from '../../clientManagementHelpers'
 import sharedStyles from '../shared/Tools.module.css'
 import ToolClientSelector from '../shared/ToolClientSelector'
 import { useWorkspaceToolClient } from '../shared/toolClientState'
@@ -48,13 +49,7 @@ function formatDateTime(value) {
 }
 
 function getInitials(name) {
-  return String(name || '')
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0] || '')
-    .join('')
-    .toUpperCase()
+  return getClientInitials(name)
 }
 
 function getTabAccentColor(tabKey) {
@@ -292,14 +287,18 @@ function VaultDetail({
           <SectionHeader
             title="Client Info"
           />
-          <FieldGrid>
-            <ValueField copyable label="Client name" value={selectedClient.name || 'Not set'} />
-            <ValueField copyable label="Trade name" value={selectedClient.tradeName || 'Not set'} />
-            <ValueField copyable label="GST number" mono value={selectedClient.gst || 'Not set'} />
-            <ValueField copyable label="PAN number" mono value={selectedClient.pan || 'Not set'} />
-            <ValueField copyable label="Email" value={selectedClient.email || 'Not set'} />
-            <ValueField copyable label="Phone" mono value={selectedClient.phone || 'Not set'} />
-          </FieldGrid>
+          <div className={styles.clientInfoGrid}>
+            <div className={styles.clientInfoColumn}>
+              <ValueField copyable label="Client name" value={selectedClient.name || 'Not set'} />
+              <ValueField copyable label="PAN number" mono value={selectedClient.pan || 'Not set'} />
+              <ValueField copyable label="GST number" mono value={selectedClient.gst || 'Not set'} />
+            </div>
+            <div className={styles.clientInfoColumn}>
+              <ValueField copyable label="Trade name" value={selectedClient.tradeName || 'Not set'} />
+              <ValueField copyable label="Email" value={selectedClient.email || 'Not set'} />
+              <ValueField copyable label="Phone" mono value={selectedClient.phone || 'Not set'} />
+            </div>
+          </div>
         </>
       )
     }
@@ -387,34 +386,6 @@ function VaultDetail({
 
   return (
     <section className={joinClasses(workspaceStyles.panel, styles.detailShell)}>
-      <div className={styles.detailTopbar}>
-        <span className={styles.detailTopbarPill}>Client vault</span>
-        <div className={styles.detailTopbarActions}>
-          <button className={styles.iconActionButton} onClick={onEdit} type="button">
-            <WorkspaceIcon name="edit" size={16} />
-          </button>
-          <button className={styles.iconActionButton} onClick={onDelete} type="button">
-            <WorkspaceIcon name="trash" size={16} />
-          </button>
-        </div>
-      </div>
-
-      <div className={styles.clientBand}>
-        <div className={styles.clientBandMain}>
-          <span className={styles.clientAvatar}>{getInitials(selectedClient.name)}</span>
-          <div>
-            <h2 className={styles.detailTitle}>{selectedClient.name}</h2>
-            <div className={styles.clientChips}>
-              <span className={styles.clientChip}>{selectedClient.gst || 'GST not set'}</span>
-              <span className={styles.clientChip}>{selectedClient.pan || 'PAN not set'}</span>
-            </div>
-          </div>
-        </div>
-        <div className={styles.detailMeta}>
-          <InfoChip label="Last updated" value={formatDateTime(vault.updatedAt)} />
-          <InfoChip label="Optional tabs" value={String(getOptionalSectionCount(vault))} />
-        </div>
-      </div>
 
       <div className={styles.detailFrame}>
         <aside className={styles.tabRail}>
@@ -1102,22 +1073,78 @@ export default function PasswordManagerPage() {
     }
   }
 
+  const avatarTone = selectedClient ? getClientAvatarTone(selectedClient.id || selectedClient.name) : null
+
   return (
     <div className={joinClasses(workspaceStyles.page, sharedStyles.toolPage, styles.page)}>
-      <section className={styles.selectorRow}>
-        <ToolClientSelector
-          className={styles.selectorSlot}
-          clients={clients}
-          errorMessage={clientErrorMessage}
-          filteredClients={filteredClients}
-          onCreateClient={openClientModal}
-          onQueryChange={setQuery}
-          onRetry={reloadClients}
-          onSelectClient={handleSelectClient}
-          query={query}
-          selectedClient={selectedClient}
-          status={clientStatus}
-        />
+      {/* Unified Header */}
+      <section className={styles.unifiedHeader}>
+        <div className={styles.unifiedHeaderLeft}>
+          {selectedClient ? (
+            <>
+              <span
+                className={styles.unifiedAvatar}
+                style={{
+                  '--client-avatar-background': avatarTone?.background,
+                  '--client-avatar-foreground': avatarTone?.foreground,
+                }}
+              >
+                {getInitials(selectedClient.name)}
+              </span>
+              <div className={styles.unifiedIdentity}>
+                <h2 className={styles.unifiedName}>{selectedClient.name}</h2>
+                <div className={styles.unifiedChips}>
+                  <span className={styles.clientChip}>{selectedClient.gst || 'GST not set'}</span>
+                  <span className={styles.clientChip}>{selectedClient.pan || 'PAN not set'}</span>
+                  {vault?.updatedAt ? (
+                    <span className={styles.updatedChip}>Updated {formatDateTime(vault.updatedAt)}</span>
+                  ) : null}
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className={styles.unifiedIdentity}>
+              <h2 className={styles.unifiedName}>Password Manager</h2>
+              <p className={styles.unifiedSubtext}>Select a client to open their credential vault</p>
+            </div>
+          )}
+        </div>
+
+        <div className={styles.unifiedHeaderRight}>
+          {selectedClient && vaultStatus === 'ready' && vault ? (
+            <div className={styles.unifiedActions}>
+              <button
+                aria-label="Edit vault"
+                className={styles.iconActionButton}
+                onClick={() => setEditorOpen(true)}
+                type="button"
+              >
+                <WorkspaceIcon name="edit" size={16} />
+              </button>
+              <button
+                aria-label="Delete vault"
+                className={styles.iconActionButton}
+                onClick={() => setDeleteModalOpen(true)}
+                type="button"
+              >
+                <WorkspaceIcon name="trash" size={16} />
+              </button>
+            </div>
+          ) : null}
+          <ToolClientSelector
+            className={styles.selectorSlot}
+            clients={clients}
+            errorMessage={clientErrorMessage}
+            filteredClients={filteredClients}
+            onCreateClient={openClientModal}
+            onQueryChange={setQuery}
+            onRetry={reloadClients}
+            onSelectClient={handleSelectClient}
+            query={query}
+            selectedClient={selectedClient}
+            status={clientStatus}
+          />
+        </div>
       </section>
 
       {errorMessage ? (

@@ -7,7 +7,7 @@ import ForgotPasswordPage from './components/ForgotPasswordPage'
 import CreatePasswordPage from './components/CreatePasswordPage'
 import ClientsPage from './components/workspace/ClientsPage'
 import AccountSettingsPage from './components/workspace/AccountSettingsPage'
-import DashboardComingSoonPage from './components/workspace/DashboardComingSoonPage'
+import DashboardPage from './components/workspace/DashboardPage'
 import FeaturePlaceholderPage from './components/workspace/FeaturePlaceholderPage'
 import TallyXmlConverterPage from './components/workspace/TallyXmlConverterPage'
 import WorkspaceLayout from './components/workspace/WorkspaceLayout'
@@ -39,7 +39,7 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/create-password" element={<CreatePasswordPage />} />
         <Route path="/" element={<WorkspaceLayout />}>
-          <Route path={getWorkspaceRouteSegment(workspaceRoutes.home)} element={<DashboardComingSoonPage />} />
+          <Route path={getWorkspaceRouteSegment(workspaceRoutes.home)} element={<DashboardPage />} />
           <Route
             path={getWorkspaceRouteSegment(workspaceRoutes.accounting)}
             element={

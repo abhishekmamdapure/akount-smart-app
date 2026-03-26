@@ -756,7 +756,6 @@ export default function GstReconciliationPage() {
                     <span className={styles.gstTabButtonIndicatorInner} />
                   </span>
                   <span className={styles.gstTabButtonText}>
-                    <WorkspaceIcon className={styles.gstTabButtonToolIcon} name={content.icon} size={20} />
                     <span>{content.gstFieldLabel.replace(' (Excel)', '')}</span>
                   </span>
                   <InfoTooltip text={content.optionCopy} />

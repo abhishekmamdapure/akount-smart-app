@@ -1,0 +1,564 @@
+/* ── Dashboard Layout ── */
+
+.dashboardPage {
+  display: flex;
+  max-width: 1320px;
+  margin: 0 auto;
+  flex-direction: column;
+  gap: 20px;
+  animation: dashFadeIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes dashFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Header Band ── */
+
+.headerBand {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.greeting {
+  font-size: clamp(1.6rem, 3.2vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--color-text);
+  line-height: 1.15;
+}
+
+.dateText {
+  font-size: 0.88rem;
+  color: var(--color-text-soft);
+  font-weight: 500;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filterButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 14px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 180ms ease;
+  background: var(--surface-soft);
+  color: var(--color-text-soft);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.08);
+}
+
+.filterButtonActive {
+  background: linear-gradient(135deg, var(--color-primary-strong), #5978ff);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(49, 94, 251, 0.2);
+}
+
+.filterButton:hover:not(.filterButtonActive) {
+  background: #fff;
+  color: var(--color-text);
+  transform: translateY(-1px);
+}
+
+/* ── KPI Strip ── */
+
+.kpiStrip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.kpiCard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.07);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.kpiCard:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 0 0 1px rgba(88, 99, 119, 0.07),
+    0 12px 32px rgba(49, 94, 251, 0.08);
+}
+
+.kpiHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.kpiLabel {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #7e8798;
+}
+
+.kpiIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  width: 38px;
+  border-radius: 14px;
+  background: rgba(49, 94, 251, 0.08);
+  color: var(--color-primary-strong);
+}
+
+.kpiValue {
+  font-size: clamp(1.6rem, 2.8vw, 2.2rem);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--color-text);
+  letter-spacing: -0.03em;
+}
+
+.kpiNote {
+  font-size: 0.8rem;
+  color: var(--color-text-soft);
+  line-height: 1.3;
+}
+
+/* ── Top Clients Card ── */
+
+.topClientsWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.topClientRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  background: rgba(244, 246, 249, 0.5);
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+
+.topClientName {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.topClientCount {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--color-primary-strong);
+  flex-shrink: 0;
+}
+
+/* ── Main Grid ── */
+
+.mainGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+  gap: 16px;
+}
+
+/* ── Activity Chart Panel ── */
+
+.chartPanel {
+  padding: 22px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.07);
+}
+
+.chartTitle {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--color-text);
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+
+.chartWrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 700 / 260;
+  margin-top: 12px;
+}
+
+.chartSvg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.chartArea {
+  transition: d 400ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.chartLine {
+  transition: d 400ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.chartGridLine {
+  stroke: rgba(88, 99, 119, 0.08);
+  stroke-width: 1;
+}
+
+.chartLabelX {
+  font-size: 10px;
+  font-weight: 600;
+  fill: #7e8798;
+  text-anchor: middle;
+}
+
+.chartLabelY {
+  font-size: 10px;
+  font-weight: 600;
+  fill: #9aa3b3;
+  text-anchor: end;
+}
+
+.chartDot {
+  fill: #5b9aff;
+  transition: r 200ms ease, cx 400ms cubic-bezier(0.22, 1, 0.36, 1), cy 400ms cubic-bezier(0.22, 1, 0.36, 1);
+  cursor: pointer;
+}
+
+.chartDot:hover {
+  r: 5;
+}
+
+.chartTooltip {
+  position: absolute;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(23, 32, 51, 0.92);
+  color: #fff;
+  font-size: 0.74rem;
+  font-weight: 700;
+  pointer-events: none;
+  white-space: nowrap;
+  transform: translate(-50%, -120%);
+  opacity: 0;
+  transition: opacity 180ms ease;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+}
+
+.chartTooltipVisible {
+  opacity: 1;
+}
+
+/* ── Right Rail ── */
+
+.rightRail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Client Overview Panel ── */
+
+.clientPanel {
+  padding: 22px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(236, 242, 255, 0.9), rgba(255, 255, 255, 0.98));
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.07);
+}
+
+.clientPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.clientPanelTitle {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--color-text);
+  letter-spacing: -0.02em;
+}
+
+.planBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(49, 94, 251, 0.1);
+  color: var(--color-primary-strong);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.clientStats {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 14px;
+}
+
+.clientStat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.clientStatValue {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--color-text);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.clientStatLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #7e8798;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.capacityTrack {
+  width: 100%;
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(121, 131, 147, 0.14);
+  overflow: hidden;
+}
+
+.capacityFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--color-primary), #6a83ff);
+  transition: width 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.capacityNote {
+  margin-top: 10px;
+  font-size: 0.82rem;
+  color: var(--color-text-soft);
+  font-weight: 600;
+}
+
+/* ── Tool Distribution Panel ── */
+
+.toolPanel {
+  padding: 22px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.07);
+  flex: 1;
+}
+
+.toolPanelTitle {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--color-text);
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+
+.toolList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.toolRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: transform 180ms ease;
+}
+
+.toolRow:hover {
+  transform: translateX(2px);
+}
+
+.toolDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.toolLabel {
+  flex: 1;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.toolCount {
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: var(--color-text);
+  min-width: 24px;
+  text-align: right;
+}
+
+.toolBar {
+  width: 60px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(121, 131, 147, 0.1);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.toolBarFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transition: width 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── Empty State ── */
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 36px 20px;
+  text-align: center;
+}
+
+.emptyIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 52px;
+  width: 52px;
+  border-radius: 18px;
+  background: rgba(49, 94, 251, 0.08);
+  color: var(--color-primary-strong);
+}
+
+.emptyTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.emptyText {
+  font-size: 0.84rem;
+  color: var(--color-text-soft);
+  max-width: 300px;
+  line-height: 1.5;
+}
+
+/* ── Loading Skeleton ── */
+
+.skeleton {
+  border-radius: 22px;
+  background: linear-gradient(90deg, rgba(240, 243, 248, 0.7), rgba(220, 226, 238, 0.5), rgba(240, 243, 248, 0.7));
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeletonHeader {
+  height: 56px;
+}
+
+.skeletonKpi {
+  height: 130px;
+}
+
+.skeletonChart {
+  height: 300px;
+}
+
+.skeletonRail {
+  height: 200px;
+}
+
+/* ── Crossfade ── */
+
+.crossfade {
+  transition: opacity 300ms ease;
+}
+
+.crossfadeFading {
+  opacity: 0.3;
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 1024px) {
+  .kpiStrip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .mainGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .kpiStrip {
+    grid-template-columns: 1fr;
+  }
+
+  .headerBand {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .clientStats {
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  .greeting {
+    font-size: 1.4rem;
+  }
+}

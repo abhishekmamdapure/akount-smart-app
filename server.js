@@ -7,6 +7,7 @@ import { handleGstReconciliationRequest } from './lib/handlers/gstReconciliation
 import { handleInvoiceProcessingRequest } from './lib/handlers/invoiceProcessing.js'
 import { handleTallyXmlConversionRequest } from './lib/handlers/tallyXmlConversion.js'
 import { handlePdfToolsUsageRequest } from './lib/handlers/pdfToolsUsage.js'
+import { handleDashboardSummaryRequest } from './lib/handlers/dashboardSummary.js'
 import {
   handlePasswordManagerRequest,
   handlePasswordManagerRevealRequest,
@@ -310,6 +311,7 @@ async function startServer() {
   app.put('/api/tally-xml', (req, res) => handleTallyXmlConversionRequest(req, res))
   app.get('/api/pdf-tools-usage', (req, res) => handlePdfToolsUsageRequest(req, res))
   app.post('/api/pdf-tools-usage', (req, res) => handlePdfToolsUsageRequest(req, res))
+  app.get('/api/dashboard-summary', (req, res) => handleDashboardSummaryRequest(req, res))
 
   app.listen(3001, () => {
     console.log('API server running at http://localhost:3001')

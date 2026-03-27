@@ -266,13 +266,57 @@
 }
 
 /* =====================
+   PERK BANNER
+   ===================== */
+.perkSection {
+  position: relative;
+  z-index: 10;
+  padding: 0 40px 28px;
+  opacity: 0;
+  animation: fadeUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.58s forwards;
+}
+
+.perkBanner {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 14px 28px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(251, 191, 36, 0.55);
+  background: rgba(37, 99, 235, 0.34);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.14);
+}
+
+.perkIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.perkText {
+  margin: 0;
+  color: #ffecb5;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: clamp(16px, 2vw, 18px);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.3px;
+}
+
+/* =====================
    FEATURES SECTION
    ===================== */
 .featuresSection {
   position: relative;
   z-index: 10;
   background: transparent;
-  padding: 52px 40px 64px;
+  padding: 24px 40px 64px;
   opacity: 0;
   animation: scaleIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.65s forwards;
 }
@@ -409,8 +453,24 @@
     text-align: center;
   }
 
+  .perkSection {
+    padding: 0 16px 24px;
+  }
+
+  .perkBanner {
+    gap: 12px;
+    padding: 14px 18px;
+    border-radius: 28px;
+    justify-content: flex-start;
+  }
+
+  .perkText {
+    font-size: 15px;
+    text-align: left;
+  }
+
   .featuresSection {
-    padding: 36px 16px 48px;
+    padding: 24px 16px 48px;
   }
 
   .featuresGrid {

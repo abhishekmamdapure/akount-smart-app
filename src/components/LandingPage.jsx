@@ -1,6 +1,13 @@
 import { useState } from 'react'
 import styles from './LandingPage.module.css'
 
+const EARLY_ACCESS_PERK_MESSAGE = 'Early Access Perk: First month FREE for waitlist members'
+
+/**
+ * Renders the AkountSmart landing page waitlist experience.
+ *
+ * @returns {JSX.Element} The landing page interface.
+ */
 export default function LandingPage() {
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState('idle')
@@ -98,6 +105,22 @@ export default function LandingPage() {
           )}
         </form>
       </main>
+
+      <section className={styles.perkSection} aria-label="Waitlist member perk">
+        <div className={styles.perkBanner} role="note">
+          <span className={styles.perkIcon} aria-hidden="true">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="5" y="12" width="12" height="13" rx="2.5" fill="#F59E0B" />
+              <rect x="14" y="12" width="4" height="13" fill="#EF4444" />
+              <path d="M5 16.5h22" stroke="#EF4444" strokeWidth="2.2" />
+              <path d="M15.5 12V7.8c0-1.5-1.1-2.6-2.5-2.6-2 0-3.8 1.9-3.8 4.4 0 1.6 1.2 2.4 3.1 2.4h3.2Z" fill="#FBBF24" />
+              <path d="M16.5 12V7.8c0-1.5 1.1-2.6 2.5-2.6 2 0 3.8 1.9 3.8 4.4 0 1.6-1.2 2.4-3.1 2.4h-3.2Z" fill="#FCD34D" />
+              <rect x="5" y="10" width="22" height="4.5" rx="2.25" fill="#EF4444" />
+            </svg>
+          </span>
+          <p className={styles.perkText}>{EARLY_ACCESS_PERK_MESSAGE}</p>
+        </div>
+      </section>
 
       {/* Features Grid */}
       <section className={styles.featuresSection}>

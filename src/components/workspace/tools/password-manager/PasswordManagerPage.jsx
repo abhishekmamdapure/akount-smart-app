@@ -7,6 +7,7 @@ import sharedStyles from '../shared/Tools.module.css'
 import ToolClientSelector from '../shared/ToolClientSelector'
 import { useWorkspaceToolClient } from '../shared/toolClientState'
 import { workspaceRoutes } from '../../../../workspaceRoutes'
+import CustomSectionTitleEditor from './CustomSectionTitleEditor'
 import styles from './PasswordManagerPage.module.css'
 import {
   GST_PORTAL_WEBSITE,
@@ -360,15 +361,14 @@ function VaultDetail({
 
     const customRevealKey = `custom:${customSection.id}`
 
-    return (
-      <>
-        <SectionHeader title={customSection.label} />
-        <FieldGrid>
-          <ValueField copyable label="Section title" value={customSection.label || 'Not set'} />
-          <ValueField
-            copyable
-            href={buildWebsiteHref(customSection.website)}
-            label="Website"
+      return (
+        <>
+          <SectionHeader title={customSection.label} />
+          <FieldGrid>
+            <ValueField
+              copyable
+              href={buildWebsiteHref(customSection.website)}
+              label="Website"
             value={customSection.website || 'Not set'}
           />
           <ValueField copyable label="Username" mono value={customSection.username || 'Not set'} />
@@ -503,6 +503,7 @@ function VaultEditorModal({ onClose, onSave, saving, selectedClient, submitError
   const [activeSection, setActiveSection] = useState('basic')
   const [draft, setDraft] = useState(() => createVaultFormState(vault))
   const [editorPasswordVisible, setEditorPasswordVisible] = useState(false)
+  const [isEditingCustomSectionTitle, setIsEditingCustomSectionTitle] = useState(false)
   const [newCustomLabel, setNewCustomLabel] = useState('')
   const [showAddPanel, setShowAddPanel] = useState(false)
 
@@ -510,12 +511,14 @@ function VaultEditorModal({ onClose, onSave, saving, selectedClient, submitError
     setDraft(createVaultFormState(vault))
     setActiveSection('basic')
     setEditorPasswordVisible(false)
+    setIsEditingCustomSectionTitle(false)
     setNewCustomLabel('')
     setShowAddPanel(false)
   }, [vault])
 
   useEffect(() => {
     setEditorPasswordVisible(false)
+    setIsEditingCustomSectionTitle(false)
   }, [activeSection])
 
   const tabs = useMemo(() => buildVaultTabs(draft), [draft])
@@ -624,15 +627,6 @@ function VaultEditorModal({ onClose, onSave, saving, selectedClient, submitError
     return (
       <div className={styles.editorGrid}>
         <EditorInputField
-          label="Section title"
-          onChange={(event) =>
-            setDraft((current) =>
-              updateCustomSection(current, customSection.id, { label: event.target.value }),
-            )
-          }
-          value={customSection.label}
-        />
-        <EditorInputField
           label="Website"
           onChange={(event) =>
             setDraft((current) =>
@@ -640,6 +634,7 @@ function VaultEditorModal({ onClose, onSave, saving, selectedClient, submitError
             )
           }
           value={customSection.website || ''}
+          wide
         />
         <EditorInputField
           label="Username"
@@ -758,7 +753,21 @@ function VaultEditorModal({ onClose, onSave, saving, selectedClient, submitError
 
           <div className={styles.editorMain}>
             <div className={styles.editorMainHeader}>
-              <h3>{editorSectionMeta.title}</h3>
+              {activeCustomSection ? (
+                <CustomSectionTitleEditor
+                  editing={isEditingCustomSectionTitle}
+                  onChange={(event) =>
+                    setDraft((current) =>
+                      updateCustomSection(current, activeCustomSection.id, { label: event.target.value }),
+                    )
+                  }
+                  onEditEnd={() => setIsEditingCustomSectionTitle(false)}
+                  onEditStart={() => setIsEditingCustomSectionTitle(true)}
+                  title={activeCustomSection.label}
+                />
+              ) : (
+                <h3>{editorSectionMeta.title}</h3>
+              )}
               {activeCustomSection ? (
                 <button
                   aria-label={`Delete ${activeCustomSection.label || 'custom section'}`}

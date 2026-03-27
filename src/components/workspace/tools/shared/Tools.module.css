@@ -1178,6 +1178,22 @@
   gap: 18px;
 }
 
+.tallyControlsPanel {
+  height: 100%;
+  gap: 22px;
+}
+
+.tallyControlSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tallyProcessingSection {
+  flex: 1 1 auto;
+  justify-content: space-between;
+}
+
 .invoiceModeToggle {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1282,6 +1298,22 @@
   background: transparent;
   color: var(--color-text-soft);
   box-shadow: inset 0 0 0 1px rgba(88, 99, 119, 0.12);
+}
+
+.tallyTemplateButton {
+  transition:
+    opacity 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.tallyTemplateButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, var(--color-primary-strong), #5978ff);
+  color: #fff;
+  box-shadow: 0 12px 24px rgba(49, 94, 251, 0.18);
 }
 
 .invoicePrimaryButton:disabled,
@@ -2084,17 +2116,13 @@
 }
 
 .pdfToolCardIconStack {
-  position: relative;
-  width: 52px;
+  width: auto;
+  gap: 8px;
   justify-content: flex-start;
 }
 
 .pdfToolCardIconSecondary {
-  position: absolute;
-  right: 0;
-  bottom: -1px;
-  border-radius: 10px;
-  box-shadow: 0 0 0 4px rgba(245, 248, 252, 0.96);
+  flex: 0 0 auto;
 }
 
 .pdfControlGrid {

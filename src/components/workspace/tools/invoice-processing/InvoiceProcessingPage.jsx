@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom'
 import WorkspaceIcon from '../../WorkspaceIcon'
 import workspaceStyles from '../../Workspace.module.css'
 import styles from '../shared/Tools.module.css'
+import { buildSourceHistoryFileLink } from '../shared/historyFileLinks'
 import ToolClientSelector from '../shared/ToolClientSelector'
 import { useWorkspaceToolClient } from '../shared/toolClientState'
 import {
@@ -586,52 +587,56 @@ export default function InvoiceProcessingPage() {
               </thead>
               <tbody>
                 {history.length > 0 ? (
-                  history.map((item) => (
-                    <tr key={item.id}>
-                      <td>
-                        {item.downloadHref ? (
-                          <a
-                            className={styles.tallyHistoryFileLink}
-                            href={item.downloadHref}
-                            rel="noreferrer"
-                            target="_blank"
-                          >
-                            {item.fileName}
-                          </a>
-                        ) : (
-                          item.fileName
-                        )}
-                      </td>
-                      <td>{item.clientName}</td>
-                      <td>{formatModeLabel(item.mode)}</td>
-                      <td>{formatDateLabel(item.createdAt || item.updatedAt)}</td>
-                      <td>
-                        <span
-                          className={joinClasses(
-                            styles.invoiceHistoryStatus,
-                            item.status === 'processing' && styles.invoiceHistoryStatusProcessing,
-                            item.status === 'completed' && styles.invoiceHistoryStatusCompleted,
-                            item.status === 'failed' && styles.invoiceHistoryStatusFailed,
+                  history.map((item) => {
+                    const sourceFileLink = buildSourceHistoryFileLink(item, 'invoice.pdf')
+
+                    return (
+                      <tr key={item.id}>
+                        <td>
+                          {sourceFileLink.href ? (
+                            <a
+                              className={styles.tallyHistoryFileLink}
+                              href={sourceFileLink.href}
+                              rel="noreferrer"
+                              target="_blank"
+                            >
+                              {sourceFileLink.fileName || '-'}
+                            </a>
+                          ) : (
+                            sourceFileLink.fileName || '-'
                           )}
-                        >
-                          {item.status === 'processing' ? (
-                            <span className={styles.invoiceHistorySpinner} aria-hidden="true" />
-                          ) : null}
-                          <span>{formatHistoryStatusLabel(item.status)}</span>
-                        </span>
-                      </td>
-                      <td>
-                        {item.downloadHref ? (
-                          <a className={styles.tallyHistoryFileLink} href={item.downloadHref} rel="noreferrer" target="_blank">
-                            {item.resultFileName || 'invoice-processed.xlsx'}
-                          </a>
-                        ) : (
-                          '-'
-                        )}
-                      </td>
-                      <td>{formatProcessingTime(item.processingTimeSec)}</td>
-                    </tr>
-                  ))
+                        </td>
+                        <td>{item.clientName}</td>
+                        <td>{formatModeLabel(item.mode)}</td>
+                        <td>{formatDateLabel(item.createdAt || item.updatedAt)}</td>
+                        <td>
+                          <span
+                            className={joinClasses(
+                              styles.invoiceHistoryStatus,
+                              item.status === 'processing' && styles.invoiceHistoryStatusProcessing,
+                              item.status === 'completed' && styles.invoiceHistoryStatusCompleted,
+                              item.status === 'failed' && styles.invoiceHistoryStatusFailed,
+                            )}
+                          >
+                            {item.status === 'processing' ? (
+                              <span className={styles.invoiceHistorySpinner} aria-hidden="true" />
+                            ) : null}
+                            <span>{formatHistoryStatusLabel(item.status)}</span>
+                          </span>
+                        </td>
+                        <td>
+                          {item.downloadHref ? (
+                            <a className={styles.tallyHistoryFileLink} href={item.downloadHref} rel="noreferrer" target="_blank">
+                              {item.resultFileName || 'invoice-processed.xlsx'}
+                            </a>
+                          ) : (
+                            '-'
+                          )}
+                        </td>
+                        <td>{formatProcessingTime(item.processingTimeSec)}</td>
+                      </tr>
+                    )
+                  })
                 ) : (
                   <tr>
                     <td className={styles.invoiceHistoryEmpty} colSpan={7}>

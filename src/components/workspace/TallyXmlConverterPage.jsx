@@ -4,9 +4,11 @@ import WorkspaceIcon from './WorkspaceIcon'
 import workspaceStyles from './Workspace.module.css'
 import styles from './tools/shared/Tools.module.css'
 import ToolClientSelector from './tools/shared/ToolClientSelector'
+import { buildSourceHistoryFileLink } from './tools/shared/historyFileLinks'
 import { useWorkspaceToolClient } from './tools/shared/toolClientState'
 import {
   createTallyHistoryEntry,
+  downloadTallyTemplate,
   fetchTallyHistory,
   markTallyHistoryCompleted,
   markTallyHistoryFailed,
@@ -178,6 +180,7 @@ export default function TallyXmlConverterPage() {
   const [historyStatus, setHistoryStatus] = useState('idle')
   const [isDragActive, setIsDragActive] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isTemplateDownloading, setIsTemplateDownloading] = useState(false)
   const [processError, setProcessError] = useState('')
   const [result, setResult] = useState(null)
 
@@ -299,6 +302,24 @@ export default function TallyXmlConverterPage() {
 
   function handleClearFile() {
     resetCurrentRun()
+  }
+
+  async function handleDownloadTemplate() {
+    if (isTemplateDownloading) {
+      return
+    }
+
+    setIsTemplateDownloading(true)
+    setProcessError('')
+
+    try {
+      const templateResult = await downloadTallyTemplate()
+      triggerDownload(templateResult.downloadHref)
+    } catch (error) {
+      setProcessError(error.message || 'Unable to download the sample template.')
+    } finally {
+      setIsTemplateDownloading(false)
+    }
   }
 
   async function handleProcess() {
@@ -561,43 +582,65 @@ export default function TallyXmlConverterPage() {
             </div>
           </section>
 
-          <aside className={styles.invoiceControlsPanel}>
-            <div>
-              <span className={styles.invoiceSectionLabel}>File status</span>
-              <div className={styles.invoiceStatusRow}>
-                <span
-                  className={joinClasses(
-                    styles.invoiceStatusDot,
-                    statusTone === 'processing' && styles.invoiceStatusDotProcessing,
-                    statusTone === 'success' && styles.invoiceStatusDotSuccess,
-                    statusTone === 'warning' && styles.invoiceStatusDotWarning,
-                    statusTone === 'ready' && styles.invoiceStatusDotReady,
-                  )}
-                />
-                <div className={styles.invoiceStatusCopy}>
-                  <strong>{statusTitle}</strong>
-                  <span>{statusMessage}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className={styles.invoiceButtonStack}>
-              <button className={styles.invoicePrimaryButton} disabled={!processingEnabled} onClick={handleProcess} type="button">
-                <WorkspaceIcon name="spark" size={16} />
-                <span>{isProcessing ? 'Generating XML...' : 'Generate Tally XML'}</span>
-              </button>
-              {result?.downloadHref ? (
+          <aside className={`${styles.invoiceControlsPanel} ${styles.tallyControlsPanel}`}>
+            <section className={styles.tallyControlSection}>
+              <span className={styles.invoiceSectionLabel}>Template</span>
+              <div className={styles.invoiceButtonStack}>
                 <button
-                  className={styles.invoiceSecondaryButton}
-                  disabled={isProcessing}
-                  onClick={handleDownloadCurrentXml}
+                  className={`${styles.invoiceSecondaryButton} ${styles.tallyTemplateButton}`}
+                  disabled={isTemplateDownloading}
+                  onClick={handleDownloadTemplate}
                   type="button"
                 >
                   <WorkspaceIcon name="download" size={15} />
-                  <span>Download XML</span>
+                  <span>{isTemplateDownloading ? 'Preparing Template...' : 'Download Template'}</span>
                 </button>
-              ) : null}
-            </div>
+              </div>
+            </section>
+
+            <section className={`${styles.tallyControlSection} ${styles.tallyProcessingSection}`}>
+              <div>
+                <span className={styles.invoiceSectionLabel}>File status</span>
+                <div className={styles.invoiceStatusRow}>
+                  <span
+                    className={joinClasses(
+                      styles.invoiceStatusDot,
+                      statusTone === 'processing' && styles.invoiceStatusDotProcessing,
+                      statusTone === 'success' && styles.invoiceStatusDotSuccess,
+                      statusTone === 'warning' && styles.invoiceStatusDotWarning,
+                      statusTone === 'ready' && styles.invoiceStatusDotReady,
+                    )}
+                  />
+                  <div className={styles.invoiceStatusCopy}>
+                    <strong>{statusTitle}</strong>
+                    <span>{statusMessage}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.invoiceButtonStack}>
+                <button
+                  className={styles.invoicePrimaryButton}
+                  disabled={!processingEnabled}
+                  onClick={handleProcess}
+                  type="button"
+                >
+                  <WorkspaceIcon name="spark" size={16} />
+                  <span>{isProcessing ? 'Generating XML...' : 'Generate Tally XML'}</span>
+                </button>
+                {result?.downloadHref ? (
+                  <button
+                    className={styles.invoiceSecondaryButton}
+                    disabled={isProcessing}
+                    onClick={handleDownloadCurrentXml}
+                    type="button"
+                  >
+                    <WorkspaceIcon name="download" size={15} />
+                    <span>Download XML</span>
+                  </button>
+                ) : null}
+              </div>
+            </section>
           </aside>
         </div>
 
@@ -622,56 +665,60 @@ export default function TallyXmlConverterPage() {
               </thead>
               <tbody>
                 {history.length > 0 ? (
-                  history.map((item) => (
-                    <tr key={item.id}>
-                      <td>
-                        {item.downloadHref ? (
-                          <a
-                            className={styles.tallyHistoryFileLink}
-                            href={item.downloadHref}
-                            rel="noreferrer"
-                            target="_blank"
-                          >
-                            {item.fileName}
-                          </a>
-                        ) : (
-                          item.fileName
-                        )}
-                      </td>
-                      <td>{item.clientName}</td>
-                      <td>{formatDateLabel(item.createdAt || item.updatedAt)}</td>
-                      <td>
-                        <span
-                          className={joinClasses(
-                            styles.invoiceHistoryStatus,
-                            item.status === 'processing' && styles.invoiceHistoryStatusProcessing,
-                            item.status === 'completed' && styles.invoiceHistoryStatusCompleted,
-                            item.status === 'failed' && styles.invoiceHistoryStatusFailed,
+                  history.map((item) => {
+                    const sourceFileLink = buildSourceHistoryFileLink(item, 'source.xlsx')
+
+                    return (
+                      <tr key={item.id}>
+                        <td>
+                          {sourceFileLink.href ? (
+                            <a
+                              className={styles.tallyHistoryFileLink}
+                              href={sourceFileLink.href}
+                              rel="noreferrer"
+                              target="_blank"
+                            >
+                              {sourceFileLink.fileName || '-'}
+                            </a>
+                          ) : (
+                            sourceFileLink.fileName || '-'
                           )}
-                        >
-                          {item.status === 'processing' ? (
-                            <span className={styles.invoiceHistorySpinner} aria-hidden="true" />
-                          ) : null}
-                          <span>{formatHistoryStatusLabel(item.status)}</span>
-                        </span>
-                      </td>
-                      <td>
-                        {item.downloadHref ? (
-                          <a
-                            className={styles.tallyHistoryFileLink}
-                            href={item.downloadHref}
-                            rel="noreferrer"
-                            target="_blank"
+                        </td>
+                        <td>{item.clientName}</td>
+                        <td>{formatDateLabel(item.createdAt || item.updatedAt)}</td>
+                        <td>
+                          <span
+                            className={joinClasses(
+                              styles.invoiceHistoryStatus,
+                              item.status === 'processing' && styles.invoiceHistoryStatusProcessing,
+                              item.status === 'completed' && styles.invoiceHistoryStatusCompleted,
+                              item.status === 'failed' && styles.invoiceHistoryStatusFailed,
+                            )}
                           >
-                            {item.resultFileName || 'tally-output.xml'}
-                          </a>
-                        ) : (
-                          '-'
-                        )}
-                      </td>
-                      <td>{formatProcessingTime(item.processingTimeSec)}</td>
-                    </tr>
-                  ))
+                            {item.status === 'processing' ? (
+                              <span className={styles.invoiceHistorySpinner} aria-hidden="true" />
+                            ) : null}
+                            <span>{formatHistoryStatusLabel(item.status)}</span>
+                          </span>
+                        </td>
+                        <td>
+                          {item.downloadHref ? (
+                            <a
+                              className={styles.tallyHistoryFileLink}
+                              href={item.downloadHref}
+                              rel="noreferrer"
+                              target="_blank"
+                            >
+                              {item.resultFileName || 'tally-output.xml'}
+                            </a>
+                          ) : (
+                            '-'
+                          )}
+                        </td>
+                        <td>{formatProcessingTime(item.processingTimeSec)}</td>
+                      </tr>
+                    )
+                  })
                 ) : (
                   <tr>
                     <td className={styles.invoiceHistoryEmpty} colSpan={6}>

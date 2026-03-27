@@ -1,3 +1,5 @@
+import { normalizeIndianStateValue } from '../../constants/indianStates'
+
 const CLIENT_FORM_FIELD_NAMES = Object.freeze([
   'name',
   'tradeName',
@@ -26,6 +28,10 @@ function normalizeClientFormValue(fieldName, value) {
 
   if (fieldName === 'gst' || fieldName === 'pan') {
     return normalizedValue.toUpperCase().replace(/\s+/g, '')
+  }
+
+  if (fieldName === 'state') {
+    return normalizeIndianStateValue(normalizedValue)
   }
 
   return normalizedValue

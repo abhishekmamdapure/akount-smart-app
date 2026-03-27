@@ -410,7 +410,7 @@ export default function DashboardPage() {
   const failedCount = rangeData.failedCount || 0
   const topTool = rangeData.topTool || 'None yet'
   const topClients = rangeData.topClients || []
-  const passwordsManaged = data?.passwordsManaged || 0
+  const activeToolCount = rangeData.activeToolCount || 0
   const clientOverview = data?.clientOverview || {
     totalClients: 0,
     planName: 'Basic Plan',
@@ -453,7 +453,7 @@ export default function DashboardPage() {
       <div className={`${styles.kpiStrip} ${styles.crossfade} ${fading ? styles.crossfadeFading : ''}`}>
         <KpiCard label="Files Processed" value={completedCount} note={rangeLabel} iconName="file" />
         <KpiCard label="Most-used Tool" value={topTool} note={rangeLabel} iconName="spark" />
-        <KpiCard label="Passwords Managed" value={passwordsManaged} note="All clients" iconName="password" />
+        <KpiCard label="Active Tools" value={activeToolCount} note={rangeLabel} iconName="dashboard" />
         <TopClientsCard clients={topClients} />
       </div>
 

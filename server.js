@@ -10,10 +10,6 @@ import { handleTallyXmlConversionRequest } from './lib/handlers/tallyXmlConversi
 import { handlePdfToolsUsageRequest } from './lib/handlers/pdfToolsUsage.js'
 import { handleDashboardSummaryRequest } from './lib/handlers/dashboardSummary.js'
 import {
-  handlePasswordManagerRequest,
-  handlePasswordManagerRevealRequest,
-} from './lib/passwordManagerHandler.js'
-import {
   CLIENT_CRM_COLLECTION,
   normalizeClientPayload,
   normalizeOwnerPayload,
@@ -307,11 +303,6 @@ async function startServer() {
   app.get('/api/invoice-processing', (req, res) => handleInvoiceProcessingRequest(req, res))
   app.post('/api/invoice-processing', (req, res) => handleInvoiceProcessingRequest(req, res))
   app.put('/api/invoice-processing', (req, res) => handleInvoiceProcessingRequest(req, res))
-  app.get('/api/password-manager', (req, res) => handlePasswordManagerRequest(req, res))
-  app.post('/api/password-manager', (req, res) => handlePasswordManagerRequest(req, res))
-  app.put('/api/password-manager', (req, res) => handlePasswordManagerRequest(req, res))
-  app.delete('/api/password-manager', (req, res) => handlePasswordManagerRequest(req, res))
-  app.post('/api/password-manager/reveal', (req, res) => handlePasswordManagerRevealRequest(req, res))
   app.get('/api/tally-xml', (req, res) => handleTallyXmlConversionRequest(req, res))
   app.post('/api/tally-xml', (req, res) => handleTallyXmlConversionRequest(req, res))
   app.put('/api/tally-xml', (req, res) => handleTallyXmlConversionRequest(req, res))

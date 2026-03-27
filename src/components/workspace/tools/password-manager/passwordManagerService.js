@@ -37,7 +37,8 @@ function buildRemoteApiHref(pathname) {
   return `${apiBaseUrl}${normalizedPath}`
 }
 
-const credentialsEndpoint = buildRemoteApiHref('/api/password-manager/credentials')
+const passwordVaultEndpoint = buildRemoteApiHref('/api/password-manager')
+const passwordRevealEndpoint = buildRemoteApiHref('/api/password-manager/reveal')
 
 function getVaultCacheKey(clientId) {
   return String(clientId || '').trim()
@@ -82,35 +83,20 @@ function normalizeText(value) {
   return String(value ?? '').trim()
 }
 
-function normalizeComparable(value) {
-  return normalizeText(value).toLowerCase()
-}
-
-function getCustomSectionSlot(sectionId) {
-  const match = /^custom-slot-(\d+)$/.exec(normalizeText(sectionId))
-  const slot = Number(match?.[1] || '')
-
-  return Number.isInteger(slot) && slot >= 1 && slot <= MAX_CUSTOM_SECTIONS ? slot : 0
-}
-
-function buildCustomSectionId(slot) {
-  return `custom-slot-${slot}`
-}
-
-function mapUiOptionalSectionToApi(value) {
-  if (value === 'einvoice') {
-    return 'einv'
+function getApiErrorCode(payload) {
+  if (!payload || typeof payload !== 'object') {
+    return ''
   }
 
-  return value
-}
-
-function mapApiOptionalSectionToUi(value) {
-  if (value === 'einv') {
-    return 'einvoice'
+  if (typeof payload.code === 'string' && payload.code.trim()) {
+    return payload.code
   }
 
-  return value
+  if (payload.detail && typeof payload.detail === 'object' && typeof payload.detail.code === 'string') {
+    return payload.detail.code.trim()
+  }
+
+  return ''
 }
 
 function parseApiError(payload, fallbackMessage) {
@@ -123,12 +109,26 @@ function parseApiError(payload, fallbackMessage) {
   }
 
   if (typeof payload === 'object') {
+    if (typeof payload.message === 'string' && payload.message.trim()) {
+      return payload.message
+    }
+
     if (typeof payload.error === 'string' && payload.error.trim()) {
       return payload.error
     }
 
     if (typeof payload.detail === 'string' && payload.detail.trim()) {
       return payload.detail
+    }
+
+    if (payload.detail && typeof payload.detail === 'object') {
+      if (typeof payload.detail.message === 'string' && payload.detail.message.trim()) {
+        return payload.detail.message
+      }
+
+      if (typeof payload.detail.error === 'string' && payload.detail.error.trim()) {
+        return payload.detail.error
+      }
     }
 
     if (Array.isArray(payload.detail) && typeof payload.detail[0]?.msg === 'string') {
@@ -186,200 +186,47 @@ function buildPasswordManagerHeaders(currentUser, { includeJsonContentType = fal
   return headers
 }
 
-function ensureConfiguredEndpoint() {
-  if (!credentialsEndpoint) {
+function ensureConfiguredEndpoint(endpoint, label) {
+  if (!endpoint) {
     throw new Error(
-      'Password Manager API is not configured. Set `VITE_API_BASE_URL` and try again.',
+      `Password Manager ${label} endpoint is not configured. Set \`VITE_API_BASE_URL\` and try again.`,
     )
   }
 }
 
-function buildClientLookupQuery(selectedClient) {
-  return (
-    normalizeText(selectedClient?.gst) ||
-    normalizeText(selectedClient?.pan) ||
-    normalizeText(selectedClient?.email) ||
-    normalizeText(selectedClient?.name)
-  )
-}
-
-function scoreCredentialMatch(row, selectedClient) {
-  let score = 0
-
-  if (
-    normalizeComparable(selectedClient?.gst) &&
-    normalizeComparable(row?.gst_number) === normalizeComparable(selectedClient?.gst)
-  ) {
-    score += 8
-  }
-
-  if (
-    normalizeComparable(selectedClient?.pan) &&
-    normalizeComparable(row?.pan_number) === normalizeComparable(selectedClient?.pan)
-  ) {
-    score += 4
-  }
-
-  if (
-    normalizeComparable(selectedClient?.email) &&
-    normalizeComparable(row?.email_id) === normalizeComparable(selectedClient?.email)
-  ) {
-    score += 2
-  }
-
-  if (
-    normalizeComparable(selectedClient?.name) &&
-    normalizeComparable(row?.client_name) === normalizeComparable(selectedClient?.name)
-  ) {
-    score += 1
-  }
-
-  return score
-}
-
-function findMatchingCredential(items, selectedClient) {
-  let bestMatch = null
-  let bestScore = 0
-
-  items.forEach((item) => {
-    const score = scoreCredentialMatch(item, selectedClient)
-
-    if (score > bestScore) {
-      bestMatch = item
-      bestScore = score
-    }
-  })
-
-  return bestScore > 0 ? bestMatch : null
-}
-
-function parseActiveOptionalSections(row) {
-  const rawValue = normalizeText(row?.active_optional_sections)
-
-  if (rawValue) {
-    try {
-      const parsedValue = JSON.parse(rawValue)
-
-      if (Array.isArray(parsedValue)) {
-        return parsedValue.map((item) => normalizeText(item)).filter(Boolean)
-      }
-    } catch (error) {
-      // Fall through to inferred optional sections.
-    }
-  }
-
-  const inferredSections = []
-
-  if (normalizeText(row?.eway_login_id) || normalizeText(row?.eway_password)) {
-    inferredSections.push('eway')
-  }
-
-  if (normalizeText(row?.einv_login_id) || normalizeText(row?.einv_password)) {
-    inferredSections.push('einv')
-  }
-
-  if (
-    normalizeText(row?.epf_code) ||
-    normalizeText(row?.epf_login_id) ||
-    normalizeText(row?.epf_password)
-  ) {
-    inferredSections.push('epf')
-  }
-
-  for (let slot = 1; slot <= MAX_CUSTOM_SECTIONS; slot += 1) {
-    const hasCustomValue = Boolean(
-      normalizeText(row?.[`custom_${slot}_label`]) ||
-      normalizeText(row?.[`custom_${slot}_username`]) ||
-      normalizeText(row?.[`custom_${slot}_notes`]) ||
-      normalizeText(row?.[`custom_${slot}_password`]) ||
-      (slot === 1 && normalizeText(row?.custom_label)) ||
-      (slot === 1 && normalizeText(row?.custom_username)) ||
-      (slot === 1 && normalizeText(row?.custom_notes)) ||
-      (slot === 1 && normalizeText(row?.custom_password)),
-    )
-
-    if (hasCustomValue) {
-      inferredSections.push(`custom_${slot}`)
-    }
-  }
-
-  return inferredSections
-}
-
-function mapCredentialRowToVault(row, selectedClient) {
-  const activeOptionalSections = parseActiveOptionalSections(row)
-  const customSections = []
-
-  for (let slot = 1; slot <= MAX_CUSTOM_SECTIONS; slot += 1) {
-    const label = normalizeText(row?.[`custom_${slot}_label`] || (slot === 1 ? row?.custom_label : ''))
-    const username = normalizeText(
-      row?.[`custom_${slot}_username`] || (slot === 1 ? row?.custom_username : ''),
-    )
-    const notes = normalizeText(row?.[`custom_${slot}_notes`] || (slot === 1 ? row?.custom_notes : ''))
-    const hasSection = Boolean(
-      activeOptionalSections.includes(`custom_${slot}`) ||
-      label ||
-      username ||
-      notes ||
-      normalizeText(row?.[`custom_${slot}_password`]) ||
-      (slot === 1 && normalizeText(row?.custom_password)),
-    )
-
-    if (!hasSection) {
-      continue
-    }
-
-    customSections.push({
-      id: buildCustomSectionId(slot),
-      label: label || `Custom ${slot}`,
-      username,
-      website: notes,
-    })
-  }
-
+function normalizeVaultSection(section = {}, { fallbackWebsite = '' } = {}) {
   return {
-    clientId: String(selectedClient?.id || ''),
-    createdAt: row?.created_at || '',
-    customSections,
-    einvoice: {
-      enabled: activeOptionalSections.includes('einv') || Boolean(normalizeText(row?.einv_login_id)),
-      loginId: normalizeText(row?.einv_login_id),
-    },
-    epf: {
-      code: normalizeText(row?.epf_code),
-      enabled:
-        activeOptionalSections.includes('epf') ||
-        Boolean(normalizeText(row?.epf_code) || normalizeText(row?.epf_login_id)),
-      loginId: normalizeText(row?.epf_login_id),
-    },
-    eway: {
-      enabled: activeOptionalSections.includes('eway') || Boolean(normalizeText(row?.eway_login_id)),
-      loginId: normalizeText(row?.eway_login_id),
-    },
-    gst: {
-      loginId: normalizeText(row?.gst_login_id),
-      website: GST_PORTAL_WEBSITE,
-    },
-    id: String(row?.id || ''),
-    it: {
-      loginId: normalizeText(row?.it_login_id),
-      website: INCOME_TAX_WEBSITE,
-    },
-    sectionOrder: activeOptionalSections
-      .map((value) => {
-        if (value.startsWith('custom_')) {
-          const slot = Number(value.split('_')[1] || '')
-
-          return Number.isInteger(slot) && slot >= 1 && slot <= MAX_CUSTOM_SECTIONS
-            ? `custom:${buildCustomSectionId(slot)}`
-            : ''
-        }
-
-        return mapApiOptionalSectionToUi(value)
-      })
-      .filter(Boolean),
-    updatedAt: row?.updated_at || '',
+    ...section,
+    enabled: Boolean(section?.enabled),
+    hasPassword: Boolean(section?.hasPassword),
+    loginId: normalizeText(section?.loginId),
+    website: normalizeText(section?.website) || fallbackWebsite,
   }
+}
+
+function normalizeComparable(value) {
+  return normalizeText(value).toLowerCase()
+}
+
+function getCustomSectionSlot(sectionId) {
+  const normalizedId = normalizeText(sectionId)
+  const patterns = [
+    /^slot-(\d+)$/i,
+    /^custom:slot-(\d+)$/i,
+    /^custom-slot-(\d+)$/i,
+    /^custom-(\d+)$/i,
+  ]
+
+  for (const pattern of patterns) {
+    const match = pattern.exec(normalizedId)
+    const slot = Number(match?.[1] || '')
+
+    if (Number.isInteger(slot) && slot >= 1 && slot <= MAX_CUSTOM_SECTIONS) {
+      return slot
+    }
+  }
+
+  return 0
 }
 
 function assignCustomSectionSlots(customSections = []) {
@@ -411,6 +258,7 @@ function assignCustomSectionSlots(customSections = []) {
     }
 
     usedSlots.add(nextSlot)
+
     return {
       ...assignment,
       slot: nextSlot,
@@ -418,7 +266,18 @@ function assignCustomSectionSlots(customSections = []) {
   })
 }
 
-function buildActiveOptionalSectionsForApi(payload, customSlotMap) {
+function mapUiOptionalSectionToApi(value) {
+  if (value === 'einvoice') {
+    return 'einv'
+  }
+
+  return value
+}
+
+function buildActiveOptionalSectionsForApi(payload, customAssignments) {
+  const customSlotMap = new Map(
+    customAssignments.map(({ section, slot }) => [section?.id, slot]).filter(([, slot]) => slot),
+  )
   const normalizedSectionOrder = buildSectionOrder(
     payload?.sectionOrder || [],
     payload?.customSections || [],
@@ -427,208 +286,253 @@ function buildActiveOptionalSectionsForApi(payload, customSlotMap) {
 
   return normalizedSectionOrder
     .map((value) => {
-      if (value.startsWith('custom:')) {
-        const customSectionId = value.slice('custom:'.length)
-        const slot = customSlotMap.get(customSectionId) || 0
+      const normalizedValue = normalizeText(value)
+
+      if (!normalizedValue) {
+        return ''
+      }
+
+      if (normalizedValue.startsWith('custom:')) {
+        const customSectionId = normalizedValue.slice('custom:'.length)
+        const slot = customSlotMap.get(customSectionId) || getCustomSectionSlot(customSectionId)
 
         return slot ? `custom_${slot}` : ''
       }
 
-      return mapUiOptionalSectionToApi(value)
+      return mapUiOptionalSectionToApi(normalizedValue)
     })
     .filter(Boolean)
 }
 
-function buildPasswordFieldPayload(key, password) {
-  if (password === undefined) {
-    return {}
-  }
-
-  return { [key]: password }
-}
-
-function assignOptionalTextField(target, key, value) {
-  const normalizedValue = normalizeText(value)
-
-  if (normalizedValue) {
-    target[key] = normalizedValue
-  }
-}
-
-function buildCredentialPayload(payload, selectedClient, { isUpdate = false } = {}) {
+function buildPasswordManagerPayload(payload, selectedClient, { vaultId = '' } = {}) {
   const customAssignments = assignCustomSectionSlots(payload?.customSections || [])
-  const customSlotMap = new Map(
-    customAssignments.map(({ section, slot }) => [section?.id, slot]).filter(([, slot]) => slot),
-  )
-  const apiPayload = {
-    active_optional_sections: JSON.stringify(buildActiveOptionalSectionsForApi(payload, customSlotMap)),
+  const requestPayload = {
+    active_optional_sections: buildActiveOptionalSectionsForApi(payload, customAssignments),
+    client_id: normalizeText(payload?.clientId || selectedClient?.id),
     client_name: normalizeText(selectedClient?.name),
     email_id: normalizeText(selectedClient?.email).toLowerCase(),
+    father_name: normalizeText(payload?.fatherName),
+    gst_login_id: normalizeText(payload?.gst?.loginId),
     gst_number: normalizeText(selectedClient?.gst).toUpperCase(),
     pan_number: normalizeText(selectedClient?.pan).toUpperCase(),
     phone_number: normalizeText(selectedClient?.phone),
+    it_login_id: normalizeText(payload?.it?.loginId),
   }
 
-  assignOptionalTextField(apiPayload, 'it_login_id', payload?.it?.loginId)
-  assignOptionalTextField(apiPayload, 'gst_login_id', payload?.gst?.loginId)
+  if (vaultId) {
+    requestPayload.vault_id = normalizeText(vaultId)
+  }
+
+  if (payload?.it?.password) {
+    requestPayload.it_password = payload.it.password
+  }
+
+  if (payload?.gst?.password) {
+    requestPayload.gst_password = payload.gst.password
+  }
 
   if (payload?.eway?.enabled) {
-    assignOptionalTextField(apiPayload, 'eway_login_id', payload?.eway?.loginId)
+    requestPayload.eway_login_id = normalizeText(payload?.eway?.loginId)
+
+    if (payload?.eway?.password) {
+      requestPayload.eway_password = payload.eway.password
+    }
   }
 
-  if (payload?.einvoice?.enabled) {
-    assignOptionalTextField(apiPayload, 'einv_login_id', payload?.einvoice?.loginId)
+  const einvoiceSection = payload?.einvoice || payload?.einv
+
+  if (einvoiceSection?.enabled) {
+    requestPayload.einv_login_id = normalizeText(einvoiceSection?.loginId)
+
+    if (einvoiceSection?.password) {
+      requestPayload.einv_password = einvoiceSection.password
+    }
   }
 
   if (payload?.epf?.enabled) {
-    assignOptionalTextField(apiPayload, 'epf_code', payload?.epf?.code)
-    assignOptionalTextField(apiPayload, 'epf_login_id', payload?.epf?.loginId)
-  }
+    requestPayload.epf_code = normalizeText(payload?.epf?.code)
+    requestPayload.epf_login_id = normalizeText(payload?.epf?.loginId)
 
-  assignOptionalTextField(apiPayload, 'father_name', payload?.fatherName)
+    if (payload?.epf?.password) {
+      requestPayload.epf_password = payload.epf.password
+    }
+  }
 
   customAssignments.forEach(({ section, slot }) => {
     if (!slot) {
       return
     }
 
-    assignOptionalTextField(apiPayload, `custom_${slot}_label`, section?.label)
-    assignOptionalTextField(apiPayload, `custom_${slot}_notes`, section?.website || section?.notes)
-    assignOptionalTextField(apiPayload, `custom_${slot}_username`, section?.username)
+    const label = normalizeText(section?.label)
+    const username = normalizeText(section?.username)
+    const notes = normalizeText(section?.website || section?.notes)
 
-    Object.assign(
-      apiPayload,
-      buildPasswordFieldPayload(`custom_${slot}_password`, section?.password, { isUpdate }),
-    )
+    requestPayload[`custom_${slot}_label`] = label
+    requestPayload[`custom_${slot}_username`] = username
+    requestPayload[`custom_${slot}_notes`] = notes
+
+    if (section?.password) {
+      requestPayload[`custom_${slot}_password`] = section.password
+    }
 
     if (slot === 1) {
-      assignOptionalTextField(apiPayload, 'custom_label', section?.label)
-      assignOptionalTextField(apiPayload, 'custom_notes', section?.website || section?.notes)
-      assignOptionalTextField(apiPayload, 'custom_username', section?.username)
+      requestPayload.custom_label = label
+      requestPayload.custom_username = username
+      requestPayload.custom_notes = notes
 
-      if (section?.password !== undefined) {
-        apiPayload.custom_password = section.password
+      if (section?.password) {
+        requestPayload.custom_password = section.password
       }
     }
   })
 
-  if (isUpdate) {
-    for (let slot = 1; slot <= MAX_CUSTOM_SECTIONS; slot += 1) {
-      const slotInUse = customAssignments.some((assignment) => assignment.slot === slot)
-
-      if (!slotInUse) {
-        apiPayload[`custom_${slot}_label`] = ''
-        apiPayload[`custom_${slot}_notes`] = ''
-        apiPayload[`custom_${slot}_username`] = ''
-        apiPayload[`custom_${slot}_password`] = ''
-
-        if (slot === 1) {
-          apiPayload.custom_label = ''
-          apiPayload.custom_notes = ''
-          apiPayload.custom_username = ''
-          apiPayload.custom_password = ''
-        }
-      }
-    }
-  }
-
-  Object.assign(apiPayload, buildPasswordFieldPayload('it_password', payload?.it?.password))
-  Object.assign(apiPayload, buildPasswordFieldPayload('gst_password', payload?.gst?.password))
-
-  if (payload?.eway?.enabled) {
-    Object.assign(apiPayload, buildPasswordFieldPayload('eway_password', payload?.eway?.password))
-  } else if (isUpdate) {
-    apiPayload.eway_password = ''
-  }
-
-  if (payload?.einvoice?.enabled) {
-    Object.assign(apiPayload, buildPasswordFieldPayload('einv_password', payload?.einvoice?.password))
-  } else if (isUpdate) {
-    apiPayload.einv_password = ''
-  }
-
-  if (payload?.epf?.enabled) {
-    Object.assign(apiPayload, buildPasswordFieldPayload('epf_password', payload?.epf?.password))
-  } else if (isUpdate) {
-    apiPayload.epf_password = ''
-  }
-
-  return apiPayload
+  return requestPayload
 }
 
-async function fetchMatchingCredentialRow(selectedClient, currentUser) {
-  ensureConfiguredEndpoint()
-
-  if (!selectedClient) {
-    throw new Error('Select a client before loading the password vault.')
-  }
-
-  const token = await getAccessToken()
-  const params = new URLSearchParams({
-    page: '1',
-    page_size: '25',
-  })
-  const query = buildClientLookupQuery(selectedClient)
-
-  if (query) {
-    params.set('q', query)
-  }
-
-  const response = await fetch(`${credentialsEndpoint}?${params.toString()}`, {
-    headers: buildPasswordManagerHeaders(currentUser, { token }),
-  })
-
-  if (response.status === 404) {
-    return null
-  }
-
-  const data = await parseJsonResponse(response)
-
-  if (!response.ok) {
-    throw new Error(parseApiError(data, 'Unable to load the password vault.'))
-  }
-
-  const items = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : []
-
-  return findMatchingCredential(items, selectedClient)
-}
-
-function buildRevealFieldCandidates(field, customSectionId) {
-  if (field === 'custom') {
-    const slot = getCustomSectionSlot(customSectionId)
-
-    if (!slot) {
-      return ['custom_password']
-    }
-
-    return [`custom_${slot}_password`, 'custom_password']
-  }
-
+function buildRevealField(field, customSectionId) {
   if (field === 'it') {
-    return ['it_password']
+    return 'it_password'
   }
 
   if (field === 'gst') {
-    return ['gst_password']
+    return 'gst_password'
   }
 
   if (field === 'eway') {
-    return ['eway_password']
+    return 'eway_password'
   }
 
-  if (field === 'einvoice') {
-    return ['einv_password']
+  if (field === 'einvoice' || field === 'einv') {
+    return 'einv_password'
   }
 
   if (field === 'epf') {
-    return ['epf_password']
+    return 'epf_password'
   }
 
-  return [field]
+  if (field === 'custom') {
+    const slot = getCustomSectionSlot(customSectionId)
+
+    return slot > 1 ? `custom_${slot}_password` : 'custom_password'
+  }
+
+  return normalizeText(field)
+}
+
+function extractVaultFromResponse(payload) {
+  if (payload?.vault === null || payload?.data?.vault === null) {
+    return null
+  }
+
+  if (payload?.vault && typeof payload.vault === 'object') {
+    return payload.vault
+  }
+
+  if (payload?.data?.vault && typeof payload.data.vault === 'object') {
+    return payload.data.vault
+  }
+
+  if (payload?.item && typeof payload.item === 'object') {
+    return payload.item
+  }
+
+  if (payload && typeof payload === 'object' && (payload.id || payload.clientId || payload.customSections)) {
+    return payload
+  }
+
+  return null
+}
+
+function normalizeVaultForUi(payload, selectedClient = null) {
+  const vault = extractVaultFromResponse(payload)
+
+  if (!vault) {
+    return null
+  }
+
+  const normalizedClient = vault?.client && typeof vault.client === 'object' ? vault.client : {}
+
+  const customSections = Array.isArray(vault.customSections)
+    ? vault.customSections
+      .map((section, index) => {
+        const slot = Number(section?.slot || getCustomSectionSlot(section?.id) || index + 1)
+        const id = normalizeText(section?.id) || `slot-${slot}`
+        const website = normalizeText(section?.website || section?.notes)
+
+        return {
+          hasPassword: Boolean(section?.hasPassword),
+          id,
+          label: normalizeText(section?.label) || `Custom ${index + 1}`,
+          notes: website,
+          username: normalizeText(section?.username),
+          website,
+        }
+      })
+      .filter((section) => section.id)
+    : []
+
+  return {
+    ...vault,
+    clientId: String(vault?.clientId || selectedClient?.id || ''),
+    createdAt: vault?.createdAt || '',
+    customSections,
+    einvoice: normalizeVaultSection(vault?.einvoice || vault?.einv),
+    epf: {
+      ...normalizeVaultSection(vault?.epf),
+      code: normalizeText(vault?.epf?.code),
+    },
+    eway: normalizeVaultSection(vault?.eway),
+    fatherName: normalizeText(vault?.fatherName || normalizedClient?.fatherName),
+    gst: normalizeVaultSection(vault?.gst, { fallbackWebsite: GST_PORTAL_WEBSITE }),
+    id: String(vault?.id || ''),
+    it: normalizeVaultSection(vault?.it, { fallbackWebsite: INCOME_TAX_WEBSITE }),
+    sectionOrder: buildSectionOrder(vault?.sectionOrder || [], customSections, {
+      customSections,
+      einvoice: Boolean(vault?.einvoice?.enabled),
+      epf: Boolean(vault?.epf?.enabled),
+      eway: Boolean(vault?.eway?.enabled),
+    }),
+    updatedAt: vault?.updatedAt || '',
+  }
+}
+
+async function fetchVaultRequest(
+  pathname,
+  currentUser,
+  {
+    allowCredentialNotFound = false,
+    body,
+    method = 'GET',
+  } = {},
+) {
+  const token = await getAccessToken()
+  const response = await fetch(pathname, {
+    body: body === undefined ? undefined : JSON.stringify(body),
+    headers: buildPasswordManagerHeaders(currentUser, {
+      includeJsonContentType: body !== undefined,
+      token,
+    }),
+    method,
+  })
+  const data = await parseJsonResponse(response)
+
+  if (!response.ok) {
+    if (
+      allowCredentialNotFound &&
+      response.status === 404 &&
+      getApiErrorCode(data) === 'credential_not_found'
+    ) {
+      return null
+    }
+
+    throw new Error(parseApiError(data, 'Unable to complete the password-manager request.'))
+  }
+
+  return data
 }
 
 /**
- * Fetches the password vault for the selected client from the deployed credential API.
+ * Fetches the password vault for the selected client from the configured password-manager endpoint.
  *
  * @param {string} clientId - Selected client id.
  * @param {object} currentUser - Signed-in user metadata.
@@ -636,9 +540,14 @@ function buildRevealFieldCandidates(field, customSectionId) {
  * @returns {Promise<object | null>} Serialized password vault or null when none exists.
  */
 export async function fetchPasswordVault(clientId, currentUser, selectedClient = null) {
-  const targetClient = selectedClient && String(selectedClient.id) === String(clientId) ? selectedClient : null
-  const matchedRow = await fetchMatchingCredentialRow(targetClient, currentUser)
-  const nextVault = matchedRow ? mapCredentialRowToVault(matchedRow, targetClient) : null
+  ensureConfiguredEndpoint(passwordVaultEndpoint, 'vault')
+
+  const data = await fetchVaultRequest(
+    `${passwordVaultEndpoint}?clientId=${encodeURIComponent(clientId)}`,
+    currentUser,
+    { allowCredentialNotFound: true },
+  )
+  const nextVault = normalizeVaultForUi(data, selectedClient)
 
   writeCachedPasswordVault(clientId, nextVault)
 
@@ -646,7 +555,7 @@ export async function fetchPasswordVault(clientId, currentUser, selectedClient =
 }
 
 /**
- * Creates a password vault for the selected client in the deployed credential API.
+ * Creates a password vault for the selected client in the configured password-manager endpoint.
  *
  * @param {string} clientId - Selected client id.
  * @param {object} payload - Vault payload to persist.
@@ -655,30 +564,17 @@ export async function fetchPasswordVault(clientId, currentUser, selectedClient =
  * @returns {Promise<object | null>} Serialized password vault response.
  */
 export async function createPasswordVault(clientId, payload, currentUser, selectedClient = null) {
-  ensureConfiguredEndpoint()
+  ensureConfiguredEndpoint(passwordVaultEndpoint, 'vault')
 
-  const targetClient = selectedClient && String(selectedClient.id) === String(clientId) ? selectedClient : null
-
-  if (!targetClient) {
+  if (!selectedClient) {
     throw new Error('Select a client before creating the password vault.')
   }
 
-  const token = await getAccessToken()
-  const response = await fetch(credentialsEndpoint, {
-    body: JSON.stringify(buildCredentialPayload(payload, targetClient)),
-    headers: buildPasswordManagerHeaders(currentUser, {
-      includeJsonContentType: true,
-      token,
-    }),
+  const data = await fetchVaultRequest(passwordVaultEndpoint, currentUser, {
+    body: buildPasswordManagerPayload(payload, selectedClient),
     method: 'POST',
   })
-  const data = await parseJsonResponse(response)
-
-  if (!response.ok) {
-    throw new Error(parseApiError(data, 'Unable to create the password vault.'))
-  }
-
-  const nextVault = await fetchPasswordVault(clientId, currentUser, targetClient)
+  const nextVault = normalizeVaultForUi(data, selectedClient)
 
   writeCachedPasswordVault(clientId, nextVault)
 
@@ -686,7 +582,7 @@ export async function createPasswordVault(clientId, payload, currentUser, select
 }
 
 /**
- * Updates an existing password vault in the deployed credential API.
+ * Updates an existing password vault in the configured password-manager endpoint.
  *
  * @param {string} vaultId - Target vault id.
  * @param {object} payload - Vault payload to persist.
@@ -695,36 +591,25 @@ export async function createPasswordVault(clientId, payload, currentUser, select
  * @returns {Promise<object | null>} Serialized password vault response.
  */
 export async function updatePasswordVault(vaultId, payload, currentUser, selectedClient = null) {
-  ensureConfiguredEndpoint()
+  ensureConfiguredEndpoint(passwordVaultEndpoint, 'vault')
 
   if (!selectedClient) {
     throw new Error('Select a client before updating the password vault.')
   }
 
-  const token = await getAccessToken()
-  const response = await fetch(`${credentialsEndpoint}/${encodeURIComponent(vaultId)}`, {
-    body: JSON.stringify(buildCredentialPayload(payload, selectedClient, { isUpdate: true })),
-    headers: buildPasswordManagerHeaders(currentUser, {
-      includeJsonContentType: true,
-      token,
-    }),
+  const data = await fetchVaultRequest(passwordVaultEndpoint, currentUser, {
+    body: buildPasswordManagerPayload(payload, selectedClient, { vaultId }),
     method: 'PUT',
   })
-  const data = await parseJsonResponse(response)
+  const nextVault = normalizeVaultForUi(data, selectedClient)
 
-  if (!response.ok) {
-    throw new Error(parseApiError(data, 'Unable to update the password vault.'))
-  }
-
-  const nextVault = await fetchPasswordVault(selectedClient.id, currentUser, selectedClient)
-
-  writeCachedPasswordVault(selectedClient.id, nextVault)
+  writeCachedPasswordVault(selectedClient?.id || payload?.clientId || '', nextVault)
 
   return nextVault
 }
 
 /**
- * Deletes an existing password vault from the deployed credential API.
+ * Deletes an existing password vault from the configured password-manager endpoint.
  *
  * @param {string} vaultId - Target vault id.
  * @param {string} clientId - Selected client id.
@@ -732,24 +617,22 @@ export async function updatePasswordVault(vaultId, payload, currentUser, selecte
  * @returns {Promise<void>} Resolves when the vault has been deleted.
  */
 export async function deletePasswordVault(vaultId, clientId, currentUser) {
-  ensureConfiguredEndpoint()
+  ensureConfiguredEndpoint(passwordVaultEndpoint, 'vault')
 
-  const token = await getAccessToken()
-  const response = await fetch(`${credentialsEndpoint}/${encodeURIComponent(vaultId)}`, {
-    headers: buildPasswordManagerHeaders(currentUser, { token }),
+  const params = new URLSearchParams({
+    clientId: normalizeText(clientId),
+    vaultId: normalizeText(vaultId),
+  })
+
+  await fetchVaultRequest(`${passwordVaultEndpoint}?${params.toString()}`, currentUser, {
     method: 'DELETE',
   })
-  const data = await parseJsonResponse(response)
-
-  if (!response.ok) {
-    throw new Error(parseApiError(data, 'Unable to delete the password vault.'))
-  }
 
   writeCachedPasswordVault(clientId, null)
 }
 
 /**
- * Reveals one stored password from the deployed credential API.
+ * Reveals one stored password from the configured password-manager endpoint.
  *
  * @param {string} vaultId - Target vault id.
  * @param {string} field - Requested section key.
@@ -765,34 +648,29 @@ export async function revealPasswordField(
   clientId,
   currentUser,
 ) {
-  ensureConfiguredEndpoint()
+  ensureConfiguredEndpoint(passwordRevealEndpoint, 'reveal')
 
-  const token = await getAccessToken()
-  const fieldCandidates = buildRevealFieldCandidates(field, customSectionId)
-  let lastError = ''
+  const params = new URLSearchParams({
+    clientId: normalizeText(clientId),
+    field: buildRevealField(field, customSectionId),
+    vaultId: normalizeText(vaultId),
+  })
 
-  for (const candidateField of fieldCandidates) {
-    const response = await fetch(
-      `${credentialsEndpoint}/${encodeURIComponent(vaultId)}/reveal?field=${encodeURIComponent(candidateField)}`,
-      {
-        headers: buildPasswordManagerHeaders(currentUser, { token }),
-        method: 'POST',
-      },
-    )
-    const data = await parseJsonResponse(response)
+  const data = await fetchVaultRequest(`${passwordRevealEndpoint}?${params.toString()}`, currentUser, {
+    method: 'POST',
+  })
+  const plaintextPassword = String(
+    data?.plaintextPassword ||
+    data?.plaintext_password ||
+    data?.password ||
+    data?.data?.plaintextPassword ||
+    data?.data?.plaintext_password ||
+    '',
+  )
 
-    if (response.ok) {
-      const plaintextPassword = String(data?.plaintext_password || data?.plaintextPassword || '')
-
-      if (!plaintextPassword) {
-        throw new Error('Password reveal response was empty.')
-      }
-
-      return plaintextPassword
-    }
-
-    lastError = parseApiError(data, 'Unable to reveal the requested password.')
+  if (!plaintextPassword) {
+    throw new Error('Password reveal response was empty.')
   }
 
-  throw new Error(lastError || 'Unable to reveal the requested password.')
+  return plaintextPassword
 }

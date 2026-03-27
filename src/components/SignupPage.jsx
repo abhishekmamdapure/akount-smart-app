@@ -1,16 +1,9 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
+import { INDIAN_STATE_OPTIONS } from '../constants/indianStates'
 import shared from './auth.module.css'
 import s from './SignupPage.module.css'
-
-const INDIAN_STATES = [
-  'Andhra Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Delhi', 'Goa', 'Gujarat',
-  'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh',
-  'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab',
-  'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh',
-  'Uttarakhand', 'West Bengal',
-]
 
 const ROLES = [
   'Chartered Accountant (CA)',
@@ -155,7 +148,11 @@ export default function SignupPage() {
                   onChange={e => update('state', e.target.value)}
                 >
                   <option value="">Select State</option>
-                  {INDIAN_STATES.map(st => <option key={st} value={st}>{st}</option>)}
+                  {INDIAN_STATE_OPTIONS.map((stateName) => (
+                    <option key={stateName} value={stateName}>
+                      {stateName}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>

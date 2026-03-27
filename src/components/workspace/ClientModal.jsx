@@ -5,6 +5,7 @@ import {
   mapClientFormErrorMessage,
   validateClientFormDraft,
 } from './clientFormHelpers'
+import { buildIndianStateOptions, normalizeIndianStateValue } from '../../constants/indianStates'
 import WorkspaceIcon from './WorkspaceIcon'
 
 const PHONE_DIGIT_LIMIT = 10
@@ -91,7 +92,7 @@ function buildInitialForm(client) {
     pan: client.pan || '',
     addressLine: client.addressLine || legacyAddressParts.addressLine,
     city: client.city || legacyAddressParts.city,
-    state: client.state || legacyAddressParts.state,
+    state: normalizeIndianStateValue(client.state || legacyAddressParts.state),
     pincode: client.pincode || legacyAddressParts.pincode,
     phone: String(client.phone || '').replace('+91 ', ''),
     email: client.email || '',
@@ -210,6 +211,7 @@ export default function ClientModal({ client, currentUser, mode, onClose, onSave
   }
 
   const isEditing = mode === 'edit'
+  const stateOptions = buildIndianStateOptions(formState.state)
   const submitLabel =
     status === 'submitting'
       ? isEditing ? 'Saving Changes...' : 'Saving Client...'
@@ -319,16 +321,21 @@ export default function ClientModal({ client, currentUser, mode, onClose, onSave
 
                 <label className={`${styles.fieldGroup} ${styles.addressMetaField}`}>
                   <span className={styles.fieldLabel}>State</span>
-                  <input
+                  <select
                     autoComplete={CLIENT_FIELD_AUTOCOMPLETE}
-                    className={styles.fieldInput}
+                    className={`${styles.fieldInput} ${styles.fieldSelect}`}
                     name="state"
                     onChange={handleChange}
-                    placeholder="Maharashtra"
                     required
-                    type="text"
                     value={formState.state}
-                  />
+                  >
+                    <option value="">Select state</option>
+                    {stateOptions.map((stateName) => (
+                      <option key={stateName} value={stateName}>
+                        {stateName}
+                      </option>
+                    ))}
+                  </select>
                 </label>
 
                 <label className={`${styles.fieldGroup} ${styles.addressMetaField}`}>

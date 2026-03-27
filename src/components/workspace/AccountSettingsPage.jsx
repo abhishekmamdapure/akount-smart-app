@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
+import { buildIndianStateOptions, INDIAN_STATE_OPTIONS } from '../../constants/indianStates'
 import styles from './Workspace.module.css'
 import WorkspaceIcon from './WorkspaceIcon'
 
@@ -41,6 +42,51 @@ function buildUserHeaders(currentUser) {
   }
 }
 
+function findIndianState(value = '') {
+  const normalizedValue = String(value || '').trim().toLowerCase()
+
+  if (!normalizedValue) {
+    return ''
+  }
+
+  return INDIAN_STATE_OPTIONS.find((stateName) => stateName.toLowerCase() === normalizedValue) || ''
+}
+
+function stripStateFromAddress(address = '', state = '') {
+  const normalizedState = findIndianState(state)
+  const addressParts = String(address || '')
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean)
+
+  if (!normalizedState) {
+    return addressParts.join(', ')
+  }
+
+  return addressParts.filter((part) => findIndianState(part) !== normalizedState).join(', ')
+}
+
+function extractProfileLocation(address = '', state = '') {
+  const normalizedState = findIndianState(state)
+
+  if (normalizedState) {
+    return {
+      address: stripStateFromAddress(address, normalizedState),
+      state: normalizedState,
+    }
+  }
+
+  const extractedState = String(address || '')
+    .split(',')
+    .map((part) => findIndianState(part))
+    .find(Boolean) || ''
+
+  return {
+    address: extractedState ? stripStateFromAddress(address, extractedState) : String(address || '').trim(),
+    state: extractedState,
+  }
+}
+
 export default function AccountSettingsPage() {
   const outletContext = useOutletContext() ?? {}
   const authReady = outletContext.authReady ?? false
@@ -67,6 +113,7 @@ export default function AccountSettingsPage() {
       gst: '',
       pan: '',
       address: '',
+      state: '',
       photoUrl: '',
     }
   }, [currentUser?.email, currentUser?.user_metadata?.full_name])
@@ -75,6 +122,8 @@ export default function AccountSettingsPage() {
 
   useEffect(() => {
     if (userProfile?.profile) {
+      const profileLocation = extractProfileLocation(userProfile.profile.address, userProfile.profile.state)
+
       setProfile({
         firstName: userProfile.profile.firstName || '',
         lastName: userProfile.profile.lastName || '',
@@ -82,7 +131,8 @@ export default function AccountSettingsPage() {
         phone: String(userProfile.profile.phone || '').replace('+91 ', ''),
         gst: userProfile.profile.gst || '',
         pan: userProfile.profile.pan || '',
-        address: userProfile.profile.address || '',
+        address: profileLocation.address,
+        state: profileLocation.state,
         photoUrl: userProfile.profile.photoUrl || '',
       })
       return
@@ -151,7 +201,8 @@ export default function AccountSettingsPage() {
           phone: profile.phone,
           gst: profile.gst,
           pan: profile.pan,
-          address: profile.address,
+          address: stripStateFromAddress(profile.address, profile.state),
+          state: profile.state,
           photoUrl: profile.photoUrl,
         }),
       })
@@ -177,6 +228,7 @@ export default function AccountSettingsPage() {
   const clientLimit = userProfile?.plan?.clientLimit || 10
   const clientsUsed = userProfile?.usage?.clientsUsed ?? 0
   const usagePercent = Math.min(100, Math.round((clientsUsed / clientLimit) * 100))
+  const stateOptions = buildIndianStateOptions(profile.state)
 
   return (
     <div className={`${styles.page} ${styles.accountPageTight}`}>
@@ -294,13 +346,30 @@ export default function AccountSettingsPage() {
             />
           </label>
 
+          <label className={styles.accountField}>
+            <span>State</span>
+            <select
+              className={`${styles.accountInput} ${styles.accountSelect}`}
+              name="state"
+              onChange={handleInputChange}
+              value={profile.state}
+            >
+              <option value="">Select State</option>
+              {stateOptions.map((stateName) => (
+                <option key={stateName} value={stateName}>
+                  {stateName}
+                </option>
+              ))}
+            </select>
+          </label>
+
           <label className={`${styles.accountField} ${styles.accountFieldWide}`}>
             <span>Address</span>
             <textarea
               className={styles.accountInput}
               name="address"
               onChange={handleInputChange}
-              placeholder="Street, city, state, postal code"
+              placeholder="Street, area, city, postal code"
               rows="3"
               value={profile.address}
             />

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import styles from './LandingPage.module.css'
+import logoSrc from '/images/logo.png'
 
 const EARLY_ACCESS_PERK_MESSAGE = 'Early Access Perk: First month FREE for waitlist members'
 
@@ -51,7 +52,7 @@ export default function LandingPage() {
       {/* Navbar */}
       <nav className={styles.nav}>
         <div className={styles.logo}>
-          <img src="/images/logo.png" alt="AkountSmart" className={styles.logoImg} />
+          <img src={logoSrc} alt="AkountSmart" className={styles.logoImg} />
         </div>
         <button className={styles.launchBadge}>
           Launching in May

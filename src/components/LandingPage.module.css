@@ -86,6 +86,12 @@
   gap: 10px;
 }
 
+.logoImg {
+  height: 60px;
+  width: auto;
+  display: block;
+}
+
 .logoText {
   font-family: 'Bricolage Grotesque', sans-serif;
   font-size: 20px;

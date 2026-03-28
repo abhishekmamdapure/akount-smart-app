@@ -51,7 +51,7 @@ export default function LandingPage() {
       {/* Navbar */}
       <nav className={styles.nav}>
         <div className={styles.logo}>
-          <span className={styles.logoText}>AkountSmart</span>
+          <img src="/images/logo.png" alt="AkountSmart" className={styles.logoImg} />
         </div>
         <button className={styles.launchBadge}>
           Launching in May
